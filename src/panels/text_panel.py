@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
+import src.helper as helper
 
 
 class TextPanel(Panel):
@@ -14,17 +15,10 @@ class TextPanel(Panel):
     def draw(self):
         image = Image.new("RGB", (self.width, self.height), "white")
         draw = ImageDraw.Draw(image)
-
-        try:
-            font = ImageFont.truetype(self.font, self.font_size)
-
-        except Exception:
-            font = ImageFont.load_default(size=self.font_size)
+        font = helper.load_font(self.font, self.font_size)
 
         bbox = draw.textbbox((0, 0), self.text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        position = ((self.width - text_width) // 2, (self.height - text_height) // 2)
+        position = helper.position(bbox, self.width, self.height)
 
         draw.text(position, self.text, fill=self.font_color, font=font)
 
