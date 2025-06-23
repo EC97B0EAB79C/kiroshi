@@ -17,7 +17,7 @@ def position(bbox, width, height):
 
 
 def cut_text(text, font, max_width):
-    words = text.split()
+    words = text.split(" ")
     lines = []
     current_line = ""
 
