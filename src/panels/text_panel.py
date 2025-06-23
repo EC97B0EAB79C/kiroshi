@@ -21,7 +21,13 @@ class TextPanel(Panel):
         draw_text = helper.cut_text(self.text, font, self.width)
 
         bbox = draw.textbbox((0, 0), draw_text, font=font)
-        position = helper.position(bbox, self.width, self.height)
+        position = helper.position(
+            bbox, (self.width - self.padding * 2), (self.height - self.padding * 2)
+        )
+        position = (
+            position[0] + self.padding,
+            position[1] + self.padding,
+        )
 
         draw.text(
             position, draw_text, fill=self.font_color, font=font, align=self.align
