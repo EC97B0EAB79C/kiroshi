@@ -4,7 +4,8 @@ from PIL import Image, ImageDraw, ImageFont
 def load_font(font_path, font_size):
     try:
         return ImageFont.truetype(font_path, font_size)
-    except Exception:
+    except Exception as e:
+        print(f"Error loading font '{font_path}': {e}")
         return ImageFont.load_default(size=font_size)
 
 

@@ -193,6 +193,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-
 # Test files
 *.png
+fonts/
