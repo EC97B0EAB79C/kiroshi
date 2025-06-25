@@ -5,8 +5,8 @@ from src.panels.text_panel import TextPanel
 
 
 class TimePanel(TextPanel):
-    def __inti__(self, width=800, height=480, settings={}):
-        super().__init__(width, height, settings)
+    def __inti__(self, width=800, height=480, settings={}, DEBUG=False):
+        super().__init__(width, height, settings, DEBUG)
 
     def draw(self):
         current_date = datetime.now().strftime("%Y-%m-%d")
