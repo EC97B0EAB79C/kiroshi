@@ -2,10 +2,11 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 class Panel:
-    def __init__(self, width=800, height=480, settings={}):
+    def __init__(self, width=800, height=480, settings={}, Debug=False):
         self.width = width
         self.height = height
         self.settings = settings
+        self.DEBUG = Debug
 
         # Margin, padding and border settings
         self.margin = settings.get("margin", 10)

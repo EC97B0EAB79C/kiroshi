@@ -6,8 +6,7 @@ import src.helper as Helper
 
 class TextPanel(Panel):
     def __init__(self, width=800, height=480, settings={}, DEBUG=False):
-        super().__init__(width, height, settings)
-        self.DEBUG = DEBUG
+        super().__init__(width, height, settings, DEBUG)
 
         # Text settings
         self.text = settings.get("text", "")
@@ -17,7 +16,7 @@ class TextPanel(Panel):
         self.align = settings.get("align", "center")
 
         # Margin, padding and border settings
-        self.padding = settings.get("padding", 60)
+        self.padding = settings.get("padding", 10)
 
     def draw(self):
         image = super().draw()
