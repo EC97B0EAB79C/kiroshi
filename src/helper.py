@@ -9,11 +9,11 @@ def load_font(font_path, font_size):
         return ImageFont.load_default(size=font_size)
 
 
-def position(bbox, width, height):
+def position(bbox, width, height, spacing=0):
     content_width = bbox[2] - bbox[0]
     content_height = bbox[3] - bbox[1]
-    x = (width - content_width) // 2
-    y = (height - content_height) // 2
+    x = ((width - spacing * 2) - content_width) // 2 + spacing
+    y = ((height - spacing * 2) - content_height) // 2 + spacing
     return (x, y)
 
 

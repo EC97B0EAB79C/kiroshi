@@ -1,36 +1,64 @@
 from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
-import src.helper as helper
+import src.helper as Helper
 
 
 class TextPanel(Panel):
-    def __init__(self, width=800, height=480, settings={}):
+    def __init__(self, width=800, height=480, settings={}, DEBUG=False):
         super().__init__(width, height, settings)
+        self.DEBUG = DEBUG
+
+        # Text settings
         self.text = settings.get("text", "")
         self.font = settings.get("font")
         self.font_size = settings.get("font_size", 24)
         self.font_color = settings.get("font_color", "black")
         self.align = settings.get("align", "center")
 
+        # Margin, padding and border settings
+        self.padding = settings.get("padding", 60)
+
     def draw(self):
-        image = Image.new("RGB", (self.width, self.height), "white")
+        image = super().draw()
         draw = ImageDraw.Draw(image)
-        font = helper.load_font(self.font, self.font_size)
+        font = Helper.load_font(self.font, self.font_size)
 
-        draw_text = helper.cut_text(self.text, font, self.width)
+        spacing = self.margin + self.padding
 
-        bbox = draw.textbbox((0, 0), draw_text, font=font)
-        position = helper.position(
-            bbox, (self.width - self.padding * 2), (self.height - self.padding * 2)
-        )
+        draw_text = Helper.cut_text(self.text, font, self.width - spacing * 2)
+
+        bbox = draw.textbbox((0, 0), draw_text, font=font, align=self.align)
+        position = Helper.position(bbox, self.width, self.height, spacing)
         position = (
-            position[0] + self.padding,
-            position[1] + self.padding,
+            position[0] - bbox[0],
+            position[1] - bbox[1],
         )
 
         draw.text(
             position, draw_text, fill=self.font_color, font=font, align=self.align
         )
+
+        if self.DEBUG:
+            # Draw Bounding Box
+            draw.rectangle(
+                [
+                    bbox[0] + position[0],
+                    bbox[1] + position[1],
+                    bbox[2] + position[0],
+                    bbox[3] + position[1],
+                ],
+                outline="red",
+                width=2,
+            )
+            # Draw content area
+            draw.rectangle(
+                [
+                    (spacing, spacing),
+                    (self.width - spacing, self.height - spacing),
+                ],
+                outline="blue",
+                width=2,
+            )
 
         return image
