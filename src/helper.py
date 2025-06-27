@@ -35,3 +35,25 @@ def cut_text(text, font, max_width):
         lines.append(current_line)
 
     return "\n".join(lines)
+
+
+def fit_and_crop_picture(picture, target_size):
+    pic_width, pic_height = picture.size
+    target_width, target_height = target_size
+
+    scale_width = target_width / pic_width
+    scale_height = target_height / pic_height
+    scale = max(scale_width, scale_height)
+
+    new_width = int(pic_width * scale)
+    new_height = int(pic_height * scale)
+    resized_picture = picture.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+    if new_width > target_width or new_height > target_height:
+        left = (new_width - target_width) // 2
+        top = (new_height - target_height) // 2
+        right = left + target_width
+        bottom = top + target_height
+        resized_picture = resized_picture.crop((left, top, right, bottom))
+
+    return resized_picture
