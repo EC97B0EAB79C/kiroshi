@@ -33,11 +33,10 @@ class PicturePanel(Panel):
     def set_picture(self, picture_path):
         self.picture = Image.open(picture_path).convert("RGB")
 
-    def draw(self):
+    def _draw(self, image):
         if not self.picture:
             raise ValueError("Picture not set. Use set_picture() to set a picture.")
 
-        image = super().draw()
         draw = ImageDraw.Draw(image)
 
         content_size = (

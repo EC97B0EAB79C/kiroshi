@@ -22,12 +22,8 @@ class FourPanel(Panel):
             (self.height - self.margin * 2) // 2 - self.padding * 2,
         )
 
-    def draw(self):
-        image = super().draw()
-        draw = ImageDraw.Draw(image)
-
+    def _draw(self, image):
         spacing = self.margin + self.padding
-        panel_width, panel_height = self.get_panel_size()
 
         panel1_image = self.panel1.draw()
         image.paste(panel1_image, (spacing, spacing))
@@ -43,6 +39,11 @@ class FourPanel(Panel):
             panel4_image,
             (self.width // 2 + self.padding, self.height // 2 + self.padding),
         )
+
+        return super()._draw(image)
+
+    def _draw_border(self, image):
+        draw = ImageDraw.Draw(image)
 
         draw.line(
             [
@@ -62,50 +63,57 @@ class FourPanel(Panel):
             width=self.border_width,
         )
 
-        if self.DEBUG:
-            draw.rectangle(
-                [
-                    (spacing, spacing),
-                    (spacing + panel_width, spacing + panel_height),
-                ],
-                outline="blue",
-                width=2,
-            )
+        return super()._draw_border(image)
 
-            draw.rectangle(
-                [
-                    (self.width // 2 + self.padding, spacing),
-                    (
-                        self.width // 2 + self.padding + panel_width,
-                        spacing + panel_height,
-                    ),
-                ],
-                outline="blue",
-                width=2,
-            )
+    def _draw_debug(self, image):
+        draw = ImageDraw.Draw(image)
 
-            draw.rectangle(
-                [
-                    (spacing, self.height // 2 + self.padding),
-                    (
-                        spacing + panel_width,
-                        self.height // 2 + self.padding + panel_height,
-                    ),
-                ],
-                outline="blue",
-                width=2,
-            )
+        spacing = self.margin + self.padding
+        panel_width, panel_height = self.get_panel_size()
 
-            draw.rectangle(
-                [
-                    (self.width // 2 + self.padding, self.height // 2 + self.padding),
-                    (
-                        self.width // 2 + self.padding + panel_width,
-                        self.height // 2 + self.padding + panel_height,
-                    ),
-                ],
-                outline="blue",
-                width=2,
-            )
+        draw.rectangle(
+            [
+                (spacing, spacing),
+                (spacing + panel_width, spacing + panel_height),
+            ],
+            outline="blue",
+            width=2,
+        )
 
-        return image
+        draw.rectangle(
+            [
+                (self.width // 2 + self.padding, spacing),
+                (
+                    self.width // 2 + self.padding + panel_width,
+                    spacing + panel_height,
+                ),
+            ],
+            outline="blue",
+            width=2,
+        )
+
+        draw.rectangle(
+            [
+                (spacing, self.height // 2 + self.padding),
+                (
+                    spacing + panel_width,
+                    self.height // 2 + self.padding + panel_height,
+                ),
+            ],
+            outline="blue",
+            width=2,
+        )
+
+        draw.rectangle(
+            [
+                (self.width // 2 + self.padding, self.height // 2 + self.padding),
+                (
+                    self.width // 2 + self.padding + panel_width,
+                    self.height // 2 + self.padding + panel_height,
+                ),
+            ],
+            outline="blue",
+            width=2,
+        )
+
+        return super()._draw_debug(image)

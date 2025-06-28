@@ -15,7 +15,17 @@ class Panel:
 
     def draw(self):
         image = Image.new("RGB", (self.width, self.height), "white")
+        image = self._draw(image)
+        image = self._draw_border(image)
+        if self.DEBUG:
+            image = self._draw_debug(image)
 
+        return image
+
+    def _draw(self, image):
+        return image
+
+    def _draw_border(self, image):
         draw = ImageDraw.Draw(image)
         draw.rectangle(
             [
@@ -24,6 +34,21 @@ class Panel:
             ],
             outline=self.border_color,
             width=self.border_width,
+        )
+
+        return image
+
+    def _draw_debug(self, image):
+        draw = ImageDraw.Draw(image)
+        draw.line(
+            [(image.width // 2, 0), (image.width // 2, image.height)],
+            fill="red",
+            width=1,
+        )
+        draw.line(
+            [(0, image.height // 2), (image.width, image.height // 2)],
+            fill="red",
+            width=1,
         )
 
         return image
