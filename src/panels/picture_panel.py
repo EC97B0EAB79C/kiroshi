@@ -3,7 +3,8 @@ from PIL import Image, ImageDraw, ImageFont
 from src.panel import Panel
 import src.helper as Helper
 
-palette_colors = [
+
+PALETTE_6_COLORS = [
     0,
     0,
     0,  # Black
@@ -23,12 +24,35 @@ palette_colors = [
     255,
     0,  # Yellow
 ]
+PALETTE_GRAY_COLORS = [
+    0,
+    0,
+    0,
+    85,
+    85,
+    85,
+    127,
+    127,
+    127,
+    191,
+    191,
+    191,
+    255,
+    255,
+    255,
+]
+PALETTE = {
+    "6_colors": PALETTE_6_COLORS,
+    "gray": PALETTE_GRAY_COLORS,
+}
 
 
 class PicturePanel(Panel):
     def __init__(self, width, height, settings=None, DEBUG=False):
         super().__init__(width, height, settings, DEBUG)
         self.picture = None
+
+        self.palette_name = settings.get("palette", "6_colors")
 
     def set_picture(self, picture_path):
         self.picture = Image.open(picture_path).convert("RGB")
@@ -45,6 +69,7 @@ class PicturePanel(Panel):
         )
 
         picture = Helper.fit_and_crop_picture(self.picture, content_size)
+        palette_colors = PALETTE.get(self.palette_name, PALETTE_6_COLORS)
         palette_colors.extend([0] * (256 - len(palette_colors)))
         palette_image = Image.new("P", (1, 1))
         palette_image.putpalette(palette_colors)
