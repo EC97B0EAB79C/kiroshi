@@ -2,49 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
 import src.helper as Helper
-
-
-PALETTE_6_COLORS = [
-    0,
-    0,
-    0,  # Black
-    255,
-    255,
-    255,  # White
-    255,
-    0,
-    0,  # Red
-    0,
-    255,
-    0,  # Green
-    0,
-    0,
-    255,  # Blue
-    255,
-    255,
-    0,  # Yellow
-]
-PALETTE_GRAY_COLORS = [
-    0,
-    0,
-    0,
-    85,
-    85,
-    85,
-    127,
-    127,
-    127,
-    191,
-    191,
-    191,
-    255,
-    255,
-    255,
-]
-PALETTE = {
-    "6_colors": PALETTE_6_COLORS,
-    "gray": PALETTE_GRAY_COLORS,
-}
+from src.palette import *
 
 
 class PicturePanel(Panel):
