@@ -1,11 +1,10 @@
-import requests
-from base64 import b64encode
-
 from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
 import src.helper as Helper
 from src.palette import *
+
+import src.api.toggl as TogglAPI
 
 
 class TogglPanel(Panel):
@@ -13,32 +12,19 @@ class TogglPanel(Panel):
         super().__init__(width, height, settings, DEBUG)
 
         # Toggl API settings
-        self.api_key = settings.get("api_key", "")
-        self.api_key_status = self._verify_api_key()
-        print(self.api_key_status)
+        self.auth = f"{settings.get('api_key', '')}:api_token"
+        self.api_key_status = TogglAPI._verify_api_key(self.auth)
 
         # Margin, padding and border settings
         self.padding = settings.get("padding", 10)
 
-    def _verify_api_key(self):
-        try:
-            auth = f"{self.api_key}:api_token"
-            data = requests.get(
-                "https://api.track.toggl.com/api/v9/me",
-                headers={
-                    "content-type": "application/json",
-                    "Authorization": "Basic %s"
-                    % b64encode(auth.encode("ascii")).decode("ascii"),
-                },
-            )
-            return True if data.status_code == 200 else False
-        except Exception as e:
-            print(f"Error verifying API key: {e}")
-            return False
-
     def _draw(self, image):
         if not self.api_key_status:
             image = self._draw_api_invalid(image)
+            return image
+
+        current_entry = TogglAPI._get_current_time_entry(self.auth)
+        print(f"Current entry: {current_entry}")
 
         return image
 
