@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 
 # ----- Me --------------------------------------------------------
-def _verify_api_key(auth):
+def verify_api_key(auth):
     try:
         data = requests.get(
             "https://api.track.toggl.com/api/v9/me",
@@ -14,14 +14,16 @@ def _verify_api_key(auth):
                 % b64encode(auth.encode("ascii")).decode("ascii"),
             },
         )
-        return True if data.status_code == 200 else False
+        return (
+            data.json().get("default_workspace_id") if data.status_code == 200 else None
+        )
     except Exception as e:
         print(f"Error verifying API key: {e}")
-        return False
+        return None
 
 
 # ----- Time Entries -----------------------------------------------
-def _get_current_time_entry(auth):
+def get_current_time_entry(auth):
     try:
         data = requests.get(
             "https://api.track.toggl.com/api/v9/me/time_entries/current",
@@ -37,9 +39,9 @@ def _get_current_time_entry(auth):
         return None
 
 
-def _get_time_entries(auth, start_date, end_date=None):
+def get_time_entries(auth, start_date, end_date=None):
     try:
-        end_date = end_date or datetime.now().strftime("%Y-%m-%d")
+        end_date = end_date or (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
         params = {"start_date": start_date, "end_date": end_date}
 
         data = requests.get(
@@ -54,11 +56,11 @@ def _get_time_entries(auth, start_date, end_date=None):
         return data.json()
     except Exception as e:
         print(f"Error fetching time entries: {e}")
-        return None
+        return []
 
 
 # ----- Projects -------------------------------------------------
-def _get_workspace_projects(auth, workspace_id):
+def get_workspace_projects(auth, workspace_id):
     try:
         data = requests.get(
             f"https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/projects",
@@ -68,10 +70,13 @@ def _get_workspace_projects(auth, workspace_id):
                 % b64encode(auth.encode("ascii")).decode("ascii"),
             },
         )
-        return data.json()
+        projects = {}
+        for project in data.json():
+            projects[project.get("id")] = project
+        return projects
     except Exception as e:
         print(f"Error fetching workspace projects: {e}")
-        return None
+        return {}
 
 
 if __name__ == "__main__":
