@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw, ImageFont
 from src.panel import Panel
 import src.helper as Helper
 from src.palette import *
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import src.api.toggl as TogglAPI
 
@@ -14,7 +14,7 @@ class TogglPanel(Panel):
 
         # Text settings
         self.font = settings.get("font")
-        self.font_size = 72 / 480 * self.height
+        self.font_size = 96 / 480 * self.height
 
         # Toggl API settings
         self.auth = f"{settings.get('api_key', '')}:api_token"
@@ -117,14 +117,49 @@ class TogglPanel(Panel):
         )
         self.debug_boxes.append((position, bbox))
 
-        # TODO
-        # print(f"{entry.get('description')}·{text_project}/{color_project}")
-        # start_time = datetime.fromisoformat(entry.get("start"))
-        # local_tz = datetime.now().astimezone().tzinfo
-        # start_time_local = start_time.astimezone(local_tz)
-        # formatted_time = start_time_local.strftime("%Y-%m-%d %H:%M:%S")
+        # Draw time
+        # Set content
+        local_tz = datetime.now().astimezone().tzinfo
+        start_time = datetime.fromisoformat(entry.get("start"))
+        text_start = (
+            f"From: {start_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        duration = entry.get("duration", -1)
+        text_end = ""
+        if duration > 0:
+            end_time = start_time + timedelta(seconds=duration)
+            text_end = (
+                f"To: {end_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+        else:
+            text_end = "To: -"
+        # Draw content
+        font = Helper.load_font(self.font, self.font_size * 0.6)
+        bbox_start = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
+            (0, 0), text_start, font=font, align="left"
+        )
+        position_start = Helper.position(
+            bbox_start, content_width, content_height / 6, spacing
+        )
+        position_start = (
+            spacing,
+            content_height / 2 + position_start[1] - bbox_start[1] + spacing,
+        )
+        draw.text(position_start, text_start, fill="black", font=font, align="left")
+        self.debug_boxes.append((position_start, bbox_start))
 
-        # print(f"{formatted_time}")
+        bbox_end = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
+            (0, 0), text_end, font=font, align="left"
+        )
+        position_end = Helper.position(
+            bbox_end, content_width, content_height / 4, spacing
+        )
+        position_end = (
+            spacing,
+            content_height / 3 * 2 + position_end[1] - bbox_end[1] + spacing,
+        )
+        draw.text(position_end, text_end, fill="black", font=font, align="left")
+        self.debug_boxes.append((position_end, bbox_end))
 
         return image
 
