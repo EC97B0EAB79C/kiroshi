@@ -124,20 +124,30 @@ class TogglPanel(Panel):
         # Set content
         local_tz = datetime.now().astimezone().tzinfo
         start_time = datetime.fromisoformat(entry.get("start"))
-        text_start = (
-            f"From: {start_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
-        )
+        text_start = f"{start_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
         duration = entry.get("duration", -1)
         text_end = ""
         if duration > 0:
             end_time = start_time + timedelta(seconds=duration)
-            text_end = (
-                f"To: {end_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+            text_end = f"{end_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
         else:
-            text_end = "To: -"
+            text_end = "-"
         # Draw content
+        ## From
         font = Helper.load_font(self.font, self.font_size * 0.6)
+        bbox_from = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
+            (0, 0), "From: ", font=font, align="left"
+        )
+        position_from = Helper.position(
+            bbox_from, content_width, content_height / 6, spacing
+        )
+        position_from = (
+            spacing,
+            content_height / 2 + position_from[1] - bbox_from[1] + spacing,
+        )
+        draw.text(position_from, "From: ", fill="black", font=font, align="left")
+        self.debug_boxes.append((position_from, bbox_from))
+        ## Start time
         bbox_start = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
             (0, 0), text_start, font=font, align="left"
         )
@@ -145,12 +155,25 @@ class TogglPanel(Panel):
             bbox_start, content_width, content_height / 6, spacing
         )
         position_start = (
-            spacing,
+            spacing + bbox_from[2] - bbox_from[0],
             content_height / 2 + position_start[1] - bbox_start[1] + spacing,
         )
         draw.text(position_start, text_start, fill="black", font=font, align="left")
         self.debug_boxes.append((position_start, bbox_start))
-
+        ## To
+        bbox_to = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
+            (0, 0), "To: ", font=font, align="left"
+        )
+        position_to = Helper.position(
+            bbox_to, content_width, content_height / 4, spacing
+        )
+        position_to = (
+            spacing,
+            content_height / 3 * 2 + position_to[1] - bbox_to[1] + spacing,
+        )
+        draw.text(position_to, "To: ", fill="black", font=font, align="left")
+        self.debug_boxes.append((position_to, bbox_to))
+        ## End time
         bbox_end = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
             (0, 0), text_end, font=font, align="left"
         )
@@ -158,7 +181,7 @@ class TogglPanel(Panel):
             bbox_end, content_width, content_height / 4, spacing
         )
         position_end = (
-            spacing,
+            spacing + bbox_from[2] - bbox_from[0],
             content_height / 3 * 2 + position_end[1] - bbox_end[1] + spacing,
         )
         draw.text(position_end, text_end, fill="black", font=font, align="left")
