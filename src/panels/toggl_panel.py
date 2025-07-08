@@ -34,7 +34,10 @@ class TogglPanel(Panel):
             image = self._draw_api_invalid(image)
             return image
 
-        current_entry = TogglAPI.get_current_time_entry(self.auth)
+        time_entries = TogglAPI.get_time_entries(
+            self.auth, (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        )
+        current_entry = time_entries[0]
         image = self._draw_current_entry(image, current_entry)
 
         return image
