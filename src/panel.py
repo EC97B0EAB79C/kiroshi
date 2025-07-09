@@ -13,6 +13,9 @@ class Panel:
         self.border_color = settings.get("border_color", "black")
         self.border_width = settings.get("border_width", 2)
 
+        # Quantization settings
+        self.palette_name = settings.get("palette", "6_colors")
+
     def draw(self):
         image = Image.new("RGB", (self.width, self.height), "white")
         image = self._draw(image)
