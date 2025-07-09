@@ -23,22 +23,6 @@ def verify_api_key(auth):
 
 
 # ----- Time Entries -----------------------------------------------
-def get_current_time_entry(auth):
-    try:
-        data = requests.get(
-            "https://api.track.toggl.com/api/v9/me/time_entries/current",
-            headers={
-                "content-type": "application/json",
-                "Authorization": "Basic %s"
-                % b64encode(auth.encode("ascii")).decode("ascii"),
-            },
-        )
-        return data.json()
-    except Exception as e:
-        print(f"Error fetching current time entry: {e}")
-        return None
-
-
 def get_time_entries(auth, start_date, end_date=None):
     try:
         end_date = end_date or (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -81,20 +65,10 @@ def get_workspace_projects(auth, workspace_id):
 
 if __name__ == "__main__":
     auth = "<your_api_key>:api_token"
-    print(_verify_api_key(auth))
-    time_entry = _get_current_time_entry(auth)
-    print(time_entry)
-    workspace_projects = _get_workspace_projects(
-        auth, time_entry.get("wid", "default_workspace_id")
-    )
-    projects = {}
-    for project in workspace_projects:
-        projects[project.get("id")] = project
-        print(
-            f"name: {project.get('name', 'Unknown')}, color: {project.get('color', 'Unknown')}, client: {project.get('client_name', 'Unknown')}"
-        )
+    print(verify_api_key(auth))
+    projects = get_workspace_projects(auth, 9165417)
 
-    time_entries = _get_time_entries(
+    time_entries = get_time_entries(
         auth, (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     )
     for entry in time_entries:

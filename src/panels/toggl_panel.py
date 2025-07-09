@@ -41,6 +41,8 @@ class TogglPanel(Panel):
         image = self._draw_current_entry(image, current_entry)
         image = self._draw_summary(image, time_entries)
 
+        image = Helper.quantize_image(image, self.palette_name)
+
         return image
 
     def _get_project_details(self, project_id, workspace_id=None):
