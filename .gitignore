@@ -196,3 +196,4 @@ cython_debug/
 # Test files
 *.png
 fonts/
+icons/
