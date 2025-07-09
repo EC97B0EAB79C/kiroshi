@@ -18,6 +18,7 @@ PALETTE_6_COLORS = [
     255,
     0,  # Yellow
 ]
+PALETTE_6_COLORS.extend([0] * (256 - len(PALETTE_6_COLORS)))
 PALETTE_GRAY_COLORS = [
     0,
     0,
@@ -35,6 +36,7 @@ PALETTE_GRAY_COLORS = [
     255,
     255,
 ]
+PALETTE_GRAY_COLORS.extend([0] * (256 - len(PALETTE_GRAY_COLORS)))
 PALETTE = {
     "6_colors": PALETTE_6_COLORS,
     "gray": PALETTE_GRAY_COLORS,

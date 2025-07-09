@@ -62,7 +62,6 @@ def fit_and_crop_picture(picture, target_size):
 
 def quantize_image(image, palette):
     palette_colors = PALETTE.get(palette, PALETTE_6_COLORS)
-    palette_colors.extend([0] * (256 - len(palette_colors)))
     palette_image = Image.new("P", (1, 1))
     palette_image.putpalette(palette_colors)
     return image.quantize(palette=palette_image, dither=Image.Dither.FLOYDSTEINBERG)

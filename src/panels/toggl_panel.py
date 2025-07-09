@@ -211,6 +211,9 @@ class TogglPanel(Panel):
             total_duration += entry.get("duration", 0)
         summary = sorted(summary.items(), key=lambda x: x[1], reverse=True)
 
+        if total_duration == 0:
+            return image
+
         current_x = spacing
         for project_id, duration in summary:
             length = content_width * (duration / total_duration)
@@ -225,7 +228,6 @@ class TogglPanel(Panel):
                 fill=self._get_project_details(project_id).get("color", "#000000"),
             )
             current_x += length
-            print(f"[{self._get_project_details(project_id)['name']}]: {duration}")
 
         return image
 
