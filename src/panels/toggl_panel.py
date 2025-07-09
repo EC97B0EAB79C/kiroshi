@@ -84,7 +84,7 @@ class TogglPanel(Panel):
 
         # Draw project name and color
         # Set content
-        text_project = "🌠,テスト,Test"
+        text_project = ""
         color_project = "#000000"
         if entry.get("project_id"):
             current_project = self._get_project_details(
