@@ -39,6 +39,7 @@ class TogglPanel(Panel):
         )
         current_entry = time_entries[0]
         image = self._draw_current_entry(image, current_entry)
+        image = self._draw_summary(image, time_entries)
 
         return image
 
@@ -186,6 +187,43 @@ class TogglPanel(Panel):
         )
         draw.text(position_end, text_end, fill="black", font=font, align="left")
         self.debug_boxes.append((position_end, bbox_end))
+
+        return image
+
+    def _draw_summary(self, image, time_entries):
+        draw = ImageDraw.Draw(image)
+
+        spacing = self.margin
+        content_width = self.width - spacing * 2
+        content_height = (self.height - spacing * 2) / 10
+
+        summary = {}
+        total_duration = 0
+        for entry in time_entries:
+            project_id = entry.get("project_id")
+            if not project_id:
+                continue
+            if entry.get("duration", -1) < 0:
+                continue
+            summary[project_id] = summary.get(project_id, 0) + entry.get("duration", 0)
+            total_duration += entry.get("duration", 0)
+        summary = sorted(summary.items(), key=lambda x: x[1], reverse=True)
+
+        current_x = spacing
+        for project_id, duration in summary:
+            length = content_width * (duration / total_duration)
+            draw.rectangle(
+                [
+                    (current_x, self.height - spacing - content_height),
+                    (
+                        current_x + length,
+                        self.height - spacing,
+                    ),
+                ],
+                fill=self._get_project_details(project_id).get("color", "#000000"),
+            )
+            current_x += length
+            print(f"[{self._get_project_details(project_id)['name']}]: {duration}")
 
         return image
 
