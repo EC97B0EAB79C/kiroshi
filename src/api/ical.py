@@ -1,6 +1,6 @@
 import requests
 from icalendar import Calendar
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 
 def get_events(ical_url):
@@ -9,25 +9,36 @@ def get_events(ical_url):
         calendar = Calendar.from_ical(response.content)
         events = []
         for component in calendar.walk("vevent"):
-            print(component)
-            exit()
             event = {
                 "summary": component.get("summary"),
-                "start": component.get("dtstart"),
-                "end": component.get("dtend"),
+                "start": (
+                    component.get("dtstart").dt if component.get("dtstart") else None
+                ),
+                "end": component.get("dtend").dt if component.get("dtend") else None,
             }
+            if isinstance(event["start"], datetime):
+                event["start"] = event["start"].date()
+            if isinstance(event["end"], datetime):
+                event["end"] = event["end"].date()
             events.append(event)
+
         return events
     return None
 
 
 if __name__ == "__main__":
-    ical_url = ""
+    ical_url = "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics"
     events = get_events(ical_url)
 
-    local_tz = datetime.now().astimezone().tzinfo
+    today = date.today()
+    end = today + timedelta(days=30)
+
     for event in events:
-        print(f"Event: {event['summary']}")
-        print(f"Start: {event['start']}")
-        print(f"End: {event['end']}")
-        print("-" * 20)
+        if not event["start"]:
+            continue
+
+        if today <= event["start"] < end:
+            print(f"Event: {event['summary']}")
+            print(f"Start: {event['start']}")
+            print(f"End: {event['end']}")
+            print("-" * 20)
