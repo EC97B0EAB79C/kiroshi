@@ -14,6 +14,22 @@ from src.panels.toggl_panel import TogglPanel
 DEBUG = False
 
 
+def test_picture_panel():
+    # picture = "../pic/Cyberpunk2077_Wallpapers_TraumaTeam_3840x2160_EN.png"
+    picture = "../pic/kv_pc.jpg"
+
+    panel = PicturePanel(
+        width=800,
+        height=480,
+        settings={},
+        DEBUG=DEBUG,
+    )
+    panel.set_picture(picture)
+    image = panel.draw()
+
+    return image
+
+
 def test_four_panel():
     panel = FourPanel(
         width=800,
@@ -90,7 +106,8 @@ if os.path.exists(libdir):
 from waveshare_epd import epd7in3e
 
 if __name__ == "__main__":
-    image = test_four_panel()
+    # image = test_four_panel()
+    image = test_picture_panel()
 
     epd = epd7in3e.EPD()
     epd.init()
