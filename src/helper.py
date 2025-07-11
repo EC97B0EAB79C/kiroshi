@@ -3,6 +3,7 @@ from src.palette import *
 
 
 def load_font(font_path, font_size):
+    font_size = int(font_size)
     try:
         return ImageFont.truetype(font_path, font_size)
     except Exception as e:
