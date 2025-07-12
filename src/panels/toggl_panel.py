@@ -1,9 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
+from datetime import datetime, timezone, timedelta
 
 from src.panel import Panel
 import src.helper as Helper
 from src.palette import *
-from datetime import datetime, timezone, timedelta
 
 import src.api.toggl as TogglAPI
 

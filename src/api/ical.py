@@ -1,6 +1,6 @@
 import requests
 from icalendar import Calendar
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, time
 import os
 
 
@@ -33,6 +33,8 @@ def _extract_events(calendar):
         if isinstance(event["end"], date):
             event["end"] = datetime.combine(event["end"], datetime.min.time())
         events.append(event)
+
+    events = sorted(events, key=lambda x: x["start"] or datetime.max)
     return events
 
 
