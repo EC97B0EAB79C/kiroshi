@@ -28,10 +28,10 @@ def _extract_events(calendar):
             ),
             "end": component.get("dtend").dt if component.get("dtend") else None,
         }
-        if isinstance(event["start"], datetime):
-            event["start"] = event["start"].date()
-        if isinstance(event["end"], datetime):
-            event["end"] = event["end"].date()
+        if isinstance(event["start"], date):
+            event["start"] = datetime.combine(event["start"], datetime.min.time())
+        if isinstance(event["end"], date):
+            event["end"] = datetime.combine(event["end"], datetime.min.time())
         events.append(event)
     return events
 
@@ -57,6 +57,8 @@ if __name__ == "__main__":
 
     today = date.today()
     end = today + timedelta(days=30)
+    today = datetime.combine(today, datetime.min.time())
+    end = datetime.combine(end, datetime.min.time())
 
     for event in events:
         if not event["start"]:
