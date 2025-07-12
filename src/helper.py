@@ -39,6 +39,16 @@ def cut_text(text, font, max_width):
     return "\n".join(lines)
 
 
+def truncate_text(text, font, max_width):
+    if font.getbbox(text)[2] <= max_width:
+        return text
+
+    ellipsis = "..."
+    while font.getbbox(text + ellipsis)[2] > max_width:
+        text = text[:-1]
+    return text + ellipsis
+
+
 def fit_and_crop_picture(picture, target_size):
     pic_width, pic_height = picture.size
     target_width, target_height = target_size
