@@ -20,6 +20,7 @@ class CalendarPanel(Panel):
 
         # Margin, padding and border settings
         self.padding = settings.get("padding", 10)
+        self.entry_padding = settings.get("entry_padding", 5)
 
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
@@ -111,24 +112,54 @@ class CalendarPanel(Panel):
         return (location[0], location[1])
 
     def _draw_entry(self, image, entry, font, location, spacing):
+        entry_width = self.width - location[0] - spacing * 2
         text = entry["summary"]
-        text = Helper.truncate_text(
-            text, font, self.width - location[0] - spacing * 2
-        )  # TODO calculate width
-        text += f"\n{entry['start'].strftime('%H:%M')}-{entry['end'].strftime('%H:%M')}"
+        text = Helper.truncate_text(text, font, entry_width)
+        if not self._is_fullday_event(entry):
+            text += (
+                f"\n{entry['start'].strftime('%H:%M')}-{entry['end'].strftime('%H:%M')}"
+            )
         bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
             (0, 0), text, font=font
         )
         position = (
-            location[0] - bbox[0] + spacing,
+            location[0] + spacing,
             location[1] - bbox[1],
         )
+        print(bbox)
 
         draw = ImageDraw.Draw(image)
+        draw.rectangle(
+            [
+                (
+                    position[0] - self.entry_padding,
+                    position[1] - self.entry_padding + bbox[1],
+                ),
+                (
+                    position[0] + entry_width + self.entry_padding,
+                    position[1] + bbox[3] + self.entry_padding,
+                ),
+            ],
+            fill="black",
+        )
         draw.text(
             position,
             text,
             font=font,
-            fill=self.settings.get("font_color", "black"),
+            fill="white",
         )
-        return (location[0], location[1] + bbox[3] - bbox[1] + self.padding)
+        return (
+            location[0],
+            location[1] + bbox[3] - bbox[1] + self.padding + 2 * self.entry_padding,
+        )
+
+    def _is_fullday_event(self, entry):
+        start = entry["start"]
+        if not (start.hour == 0 and start.minute == 0):
+            return False
+
+        end = entry["end"]
+        if not (end.hour == 0 and end.minute == 0):
+            return False
+
+        return True
