@@ -40,6 +40,9 @@ class CalendarPanel(Panel):
         event_spacing = font.getbbox("000")[2]
         location = (spacing, spacing)
         for event in events:
+            if location[1] > self.height - spacing * 2:
+                break
+
             start = event["start"]
             if start.month != current_month:
                 current_month = start.month
@@ -55,6 +58,9 @@ class CalendarPanel(Panel):
 
             location = self._draw_entry(image, event, font, location, event_spacing)
 
+        draw.rectangle(
+            [(0, self.height - spacing), (self.width, self.height)], fill="white"
+        )
         return image
 
     def _draw_month(self, image, month, font, location, spacing):
@@ -126,7 +132,6 @@ class CalendarPanel(Panel):
             location[0] + spacing,
             location[1] - bbox[1],
         )
-        print(bbox)
 
         draw = ImageDraw.Draw(image)
         draw.rectangle(
