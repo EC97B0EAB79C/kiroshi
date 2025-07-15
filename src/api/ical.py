@@ -4,18 +4,34 @@ from datetime import date, datetime, timedelta, time
 import os
 
 
-def get_events(ical_url, use_cache=False):
+def get_events(ical_urls, use_cache=False):
     if use_cache:
         cached_calendar = _load_cache()
         if cached_calendar:
             return _extract_events(cached_calendar)
 
-    response = requests.get(ical_url)
-    if response.status_code == 200:
-        calendar = Calendar.from_ical(response.content)
+    if not isinstance(ical_urls, list):
+        ical_urls = [ical_urls]
+
+    calendar = None
+    for ical_url in ical_urls:
+        try:
+            response = requests.get(ical_url)
+            response.raise_for_status()
+            if calendar is None:
+                calendar = Calendar.from_ical(response.content)
+            else:
+                temp_calendar = Calendar.from_ical(response.content)
+                for component in temp_calendar.walk("vevent"):
+                    calendar.add_component(component)
+
+        except Exception as e:
+            print(f"Error fetching {ical_url}: {e}")
+
+    if use_cache and calendar:
         _save_cache(calendar)
-        return _extract_events(calendar)
-    return None
+
+    return _extract_events(calendar) if calendar else []
 
 
 def _extract_events(calendar):
@@ -54,13 +70,14 @@ def _load_cache():
 
 
 if __name__ == "__main__":
-    ical_url = "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics"
-    events = get_events(ical_url, use_cache=True)
+    ical_url = [
+        "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics",
+        "https://calendar.google.com/calendar/ical/en.south_korea%23holiday%40group.v.calendar.google.com/public/basic.ics",
+    ]
+    events = get_events(ical_url, use_cache=False)
 
-    today = date.today()
-    end = today + timedelta(days=30)
-    today = datetime.combine(today, datetime.min.time())
-    end = datetime.combine(end, datetime.min.time())
+    today = datetime.combine(date.today(), datetime.min.time())
+    end = today + timedelta(days=90)
 
     for event in events:
         if not event["start"]:

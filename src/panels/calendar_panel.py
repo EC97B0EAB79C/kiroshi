@@ -16,7 +16,7 @@ class CalendarPanel(Panel):
         self.font_size = settings.get("font_size", 10)
 
         # Calendar settings
-        self.ical_url = settings.get("ical_url")
+        self.ical_urls = settings.get("ical_urls")
 
         # Margin, padding and border settings
         self.padding = settings.get("padding", 10)
@@ -29,11 +29,15 @@ class CalendarPanel(Panel):
 
         font = Helper.load_font(self.font, self.font_size)
 
-        events = IcalAPI.get_events(self.ical_url)
+        events = IcalAPI.get_events(self.ical_urls)
         if not events:
             return image
 
-        today = date.today()
+        today = datetime.combine(date.today(), datetime.min.time())
+        events = [
+            event for event in events if (event["start"] and event["start"] >= today)
+        ]
+
         current_month = today.month - 1
         current_day = today.day - 1
         current_week = today.isocalendar()[1] - 1
