@@ -141,7 +141,7 @@ class CalendarPanel(Panel):
             self.palette_name == "6_colors"
             and "holiday" in entry["description"].lower()
         ):
-            fill_color = "green"
+            fill_color = "red"
 
         draw = ImageDraw.Draw(image)
         draw.rectangle(

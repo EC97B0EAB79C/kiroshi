@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os
+
 from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
@@ -14,6 +16,7 @@ from src.panels.calendar_panel import CalendarPanel
 
 DEBUG = False
 TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
+TOGGL_API_KEY = os.getenv("TOGGL_API_KEY")
 
 
 def get_picture_panel(size=(800, 480)):
@@ -70,7 +73,7 @@ def get_toggl_panel(size=(800, 480)):
         width=size[0],
         height=size[1],
         settings={
-            "api_key": "",
+            "api_key": TOGGL_API_KEY,
             "margin": 0,
             "padding": 10,
             "border_color": "black",
