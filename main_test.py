@@ -10,8 +10,10 @@ from src.panels.vertical_panel import VerticalPanel
 from src.panels.four_panel import FourPanel
 from src.panels.picture_panel import PicturePanel
 from src.panels.toggl_panel import TogglPanel
+from src.panels.calendar_panel import CalendarPanel
 
 DEBUG = False
+TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
 
 
 def test_picture_panel():
@@ -46,7 +48,7 @@ def test_four_panel():
         height=size[1],
         settings={
             "text": "Text Panel",
-            "font": "fonts/roboto_mono/static/RobotoMono-Regular.ttf",
+            "font": TEST_FONT,
             "font_size": 24,
             "font_color": "black",
             "align": "center",
@@ -61,7 +63,7 @@ def test_four_panel():
         width=size[0],
         height=size[1],
         settings={
-            "font": "fonts/roboto_mono/static/RobotoMono-Regular.ttf",
+            "font": TEST_FONT,
             "font_size": 24,
             "font_color": "black",
             "align": "center",
@@ -91,6 +93,28 @@ def test_four_panel():
     return image
 
 
+def test_calendar_panel():
+
+    panel = CalendarPanel(
+        width=800,
+        height=480,
+        settings={
+            "ical_urls": [
+                "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics",
+                "https://calendar.google.com/calendar/ical/en.south_korea%23holiday%40group.v.calendar.google.com/public/basic.ics",
+            ],
+            "font": TEST_FONT,
+            "font_size": 24,
+            "font_color": "black",
+            "padding": 10,
+        },
+        DEBUG=DEBUG,
+    )
+    image = panel.draw()
+
+    return image
+
+
 import sys
 import os
 
@@ -107,7 +131,8 @@ from waveshare_epd import epd7in3e
 
 if __name__ == "__main__":
     # image = test_four_panel()
-    image = test_picture_panel()
+    # image = test_picture_panel()
+    image = test_calendar_panel()
 
     epd = epd7in3e.EPD()
     epd.init()
