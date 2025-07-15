@@ -38,6 +38,7 @@ def _extract_events(calendar):
     events = []
     for component in calendar.walk("vevent"):
         event = {
+            "description": component.get("description"),
             "summary": component.get("summary"),
             "start": (
                 component.get("dtstart").dt if component.get("dtstart") else None
@@ -85,6 +86,7 @@ if __name__ == "__main__":
 
         if today <= event["start"] < end:
             print(f"Event: {event['summary']}")
+            print(f"Description: {event['description']}")
             print(f"Start: {event['start']}")
             print(f"End: {event['end']}")
             print("-" * 20)

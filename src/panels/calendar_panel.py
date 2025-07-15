@@ -136,6 +136,12 @@ class CalendarPanel(Panel):
             location[0] + spacing,
             location[1] - bbox[1],
         )
+        fill_color = "black"
+        if (
+            self.palette_name == "6_colors"
+            and "holiday" in entry["description"].lower()
+        ):
+            fill_color = "green"
 
         draw = ImageDraw.Draw(image)
         draw.rectangle(
@@ -149,7 +155,7 @@ class CalendarPanel(Panel):
                     position[1] + bbox[3] + self.entry_padding,
                 ),
             ],
-            fill="black",
+            fill=fill_color,
         )
         draw.text(
             position,
