@@ -16,7 +16,7 @@ DEBUG = False
 TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
 
 
-def picture_panel(size=(800, 480)):
+def get_picture_panel(size=(800, 480)):
     # picture = "../pic/Cyberpunk2077_Wallpapers_TraumaTeam_3840x2160_EN.png"
     picture = "../pic/kv_pc.jpg"
 
@@ -30,7 +30,7 @@ def picture_panel(size=(800, 480)):
     return panel
 
 
-def time_panel(size=(800, 480)):
+def get_time_panel(size=(800, 480)):
     return TimePanel(
         width=size[0],
         height=size[1],
@@ -46,7 +46,7 @@ def time_panel(size=(800, 480)):
     )
 
 
-def text_panel(size=(800, 480)):
+def get_text_panel(size=(800, 480)):
     text = "The quick brown fox jumps over the lazy dog."
 
     return TextPanel(
@@ -65,7 +65,7 @@ def text_panel(size=(800, 480)):
     )
 
 
-def toggl_panel(size=(800, 480)):
+def get_toggl_panel(size=(800, 480)):
     return TogglPanel(
         width=size[0],
         height=size[1],
@@ -81,7 +81,7 @@ def toggl_panel(size=(800, 480)):
     )
 
 
-def calendar_panel(size=(800, 480)):
+def get_calendar_panel(size=(800, 480)):
     return CalendarPanel(
         width=size[0],
         height=size[1],
@@ -100,7 +100,7 @@ def calendar_panel(size=(800, 480)):
 
 
 def test_picture_panel():
-    panel = picture_panel()
+    panel = get_picture_panel()
     image = panel.draw()
     return image
 
@@ -116,13 +116,13 @@ def test_four_panel():
     )
     size = panel.get_panel_size()
 
-    text_panel = text_panel(size)
+    text_panel = get_text_panel(size)
 
-    time_panel = time_panel(size)
+    time_panel = get_time_panel(size)
 
-    toggl_panel = toggl_panel(size)
+    toggl_panel = get_toggl_panel(size)
 
-    calendar_panel = calendar_panel(size)
+    calendar_panel = get_calendar_panel(size)
 
     panel.set_panels(text_panel, time_panel, toggl_panel, calendar_panel)
     image = panel.draw()
@@ -132,7 +132,7 @@ def test_four_panel():
 
 def test_calendar_panel():
 
-    panel = calendar_panel()
+    panel = get_calendar_panel()
     image = panel.draw()
 
     return image
