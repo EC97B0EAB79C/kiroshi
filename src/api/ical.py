@@ -51,6 +51,7 @@ def _extract_events(calendar):
             event["end"] = datetime.combine(event["end"], datetime.min.time())
         events.append(event)
 
+    # TODO cut multiday events
     events = sorted(events, key=lambda x: x["start"] or datetime.max)
     return events
 
@@ -69,6 +70,39 @@ def _load_cache():
     except FileNotFoundError:
         return None
 
+
+TEST_DATA = [
+    {
+        "summary": "Test Event 1",
+        "start": datetime.combine(date.today(), time(10, 0)),
+        "end": datetime.combine(date.today(), time(11, 0)),
+    },
+    {
+        "summary": "Test Event 2",
+        "start": datetime.combine(date.today() + timedelta(days=1), time(12, 0)),
+        "end": datetime.combine(date.today() + timedelta(days=1), time(13, 0)),
+    },
+    {
+        "summary": "Test Event 2-1 very long title that should be truncated",
+        "start": datetime.combine(date.today() + timedelta(days=1), time(13, 0)),
+        "end": datetime.combine(date.today() + timedelta(days=1), time(15, 0)),
+    },
+    {
+        "summary": "Test Event 3 - H",
+        "start": datetime.combine(date.today() + timedelta(days=3), time(0, 0)),
+        "end": datetime.combine(date.today() + timedelta(days=4), time(0, 0)),
+    },
+    # {
+    #     "summary": "Test Event 3",
+    #     "start": datetime.combine(date.today() + timedelta(days=3), time(14, 0)),
+    #     "end": datetime.combine(date.today() + timedelta(days=3), time(15, 0)),
+    # },
+    {
+        "summary": "Test Event 4",
+        "start": datetime.combine(date.today() + timedelta(days=32), time(14, 0)),
+        "end": datetime.combine(date.today() + timedelta(days=32), time(15, 0)),
+    },
+]
 
 if __name__ == "__main__":
     ical_url = [
