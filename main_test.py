@@ -16,19 +16,92 @@ DEBUG = False
 TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
 
 
-def test_picture_panel():
+def picture_panel(size=(800, 480)):
     # picture = "../pic/Cyberpunk2077_Wallpapers_TraumaTeam_3840x2160_EN.png"
     picture = "../pic/kv_pc.jpg"
 
     panel = PicturePanel(
-        width=800,
-        height=480,
+        width=size[0],
+        height=size[1],
         settings={},
         DEBUG=DEBUG,
     )
     panel.set_picture(picture)
-    image = panel.draw()
+    return panel
 
+
+def time_panel(size=(800, 480)):
+    return TimePanel(
+        width=size[0],
+        height=size[1],
+        settings={
+            "font": TEST_FONT,
+            "font_size": 24,
+            "font_color": "black",
+            "align": "center",
+            "margin": 10,
+            "padding": 10,
+        },
+        DEBUG=DEBUG,
+    )
+
+
+def text_panel(size=(800, 480)):
+    text = "The quick brown fox jumps over the lazy dog."
+
+    return TextPanel(
+        width=size[0],
+        height=size[1],
+        settings={
+            "text": text,
+            "font": TEST_FONT,
+            "font_size": 24,
+            "font_color": "black",
+            "align": "center",
+            "margin": 10,
+            "padding": 10,
+        },
+        DEBUG=DEBUG,
+    )
+
+
+def toggl_panel(size=(800, 480)):
+    return TogglPanel(
+        width=size[0],
+        height=size[1],
+        settings={
+            "api_key": "",
+            "margin": 0,
+            "padding": 10,
+            "border_color": "black",
+            "border_width": 0,
+            "font": "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf",
+        },
+        DEBUG=DEBUG,
+    )
+
+
+def calendar_panel(size=(800, 480)):
+    return CalendarPanel(
+        width=size[0],
+        height=size[1],
+        settings={
+            "ical_urls": [
+                "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics",
+                "https://calendar.google.com/calendar/ical/en.south_korea%23holiday%40group.v.calendar.google.com/public/basic.ics",
+            ],
+            "font": TEST_FONT,
+            "font_size": 24,
+            "font_color": "black",
+            "padding": 10,
+        },
+        DEBUG=DEBUG,
+    )
+
+
+def test_picture_panel():
+    panel = picture_panel()
+    image = panel.draw()
     return image
 
 
@@ -43,51 +116,15 @@ def test_four_panel():
     )
     size = panel.get_panel_size()
 
-    text_panel = TextPanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "text": "Text Panel",
-            "font": TEST_FONT,
-            "font_size": 24,
-            "font_color": "black",
-            "align": "center",
-            "margin": 10,
-            "border_width": 0,
-            "padding": 10,
-        },
-        DEBUG=DEBUG,
-    )
+    text_panel = text_panel(size)
 
-    time_panel = TimePanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "font": TEST_FONT,
-            "font_size": 24,
-            "font_color": "black",
-            "align": "center",
-            "margin": 10,
-            "padding": 10,
-        },
-        DEBUG=DEBUG,
-    )
+    time_panel = time_panel(size)
 
-    toggl_panel = TogglPanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "api_key": "",
-            "margin": 0,
-            "padding": 10,
-            "border_color": "black",
-            "border_width": 0,
-            "font": "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf",
-        },
-        DEBUG=DEBUG,
-    )
+    toggl_panel = toggl_panel(size)
 
-    panel.set_panels(text_panel, time_panel, toggl_panel, time_panel)
+    calendar_panel = calendar_panel(size)
+
+    panel.set_panels(text_panel, time_panel, toggl_panel, calendar_panel)
     image = panel.draw()
 
     return image
@@ -95,21 +132,7 @@ def test_four_panel():
 
 def test_calendar_panel():
 
-    panel = CalendarPanel(
-        width=800,
-        height=480,
-        settings={
-            "ical_urls": [
-                "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics",
-                "https://calendar.google.com/calendar/ical/en.south_korea%23holiday%40group.v.calendar.google.com/public/basic.ics",
-            ],
-            "font": TEST_FONT,
-            "font_size": 24,
-            "font_color": "black",
-            "padding": 10,
-        },
-        DEBUG=DEBUG,
-    )
+    panel = calendar_panel()
     image = panel.draw()
 
     return image
@@ -130,13 +153,13 @@ if os.path.exists(libdir):
 from waveshare_epd import epd7in3e
 
 if __name__ == "__main__":
-    # image = test_four_panel()
+    image = test_four_panel()
     # image = test_picture_panel()
-    image = test_calendar_panel()
+    # image = test_calendar_panel()
 
     epd = epd7in3e.EPD()
     epd.init()
-    epd.Clear()
+    # epd.Clear()
 
     # Display the image on the e-Paper
     epd.display(epd.getbuffer(image))
