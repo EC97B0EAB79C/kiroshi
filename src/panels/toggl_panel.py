@@ -69,6 +69,9 @@ class TogglPanel(Panel):
             text_description = "No current\ntime entry"
         else:
             text_description = entry.get("description", "")
+            text_description = Helper.truncate_text(
+                text_description, font, content_width
+            )
         # Draw content
         font = Helper.load_font(self.font, self.font_size)
         bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(

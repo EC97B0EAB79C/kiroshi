@@ -139,6 +139,7 @@ class CalendarPanel(Panel):
         fill_color = "black"
         if (
             self.palette_name == "6_colors"
+            and entry["description"]
             and "holiday" in entry["description"].lower()
         ):
             fill_color = "red"
