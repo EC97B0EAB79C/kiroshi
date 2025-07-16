@@ -45,13 +45,13 @@ def _extract_events(calendar):
             ),
             "end": component.get("dtend").dt if component.get("dtend") else None,
         }
-        if isinstance(event["start"], date):
-            event["start"] = datetime.combine(event["start"], datetime.min.time())
-        if isinstance(event["end"], date):
-            event["end"] = datetime.combine(event["end"], datetime.min.time())
-        events.append(event)
+        if not event["start"] or not event["end"]:
+            continue
 
-    # TODO cut multiday events
+        event = _format_event(event)
+        divided_events = _divide_event(event)
+        events.extend(divided_events)
+
     events = sorted(events, key=lambda x: x["start"] or datetime.max)
     return events
 
@@ -71,38 +71,53 @@ def _load_cache():
         return None
 
 
-TEST_DATA = [
-    {
-        "summary": "Test Event 1",
-        "start": datetime.combine(date.today(), time(10, 0)),
-        "end": datetime.combine(date.today(), time(11, 0)),
-    },
-    {
-        "summary": "Test Event 2",
-        "start": datetime.combine(date.today() + timedelta(days=1), time(12, 0)),
-        "end": datetime.combine(date.today() + timedelta(days=1), time(13, 0)),
-    },
-    {
-        "summary": "Test Event 2-1 very long title that should be truncated",
-        "start": datetime.combine(date.today() + timedelta(days=1), time(13, 0)),
-        "end": datetime.combine(date.today() + timedelta(days=1), time(15, 0)),
-    },
-    {
-        "summary": "Test Event 3 - H",
-        "start": datetime.combine(date.today() + timedelta(days=3), time(0, 0)),
-        "end": datetime.combine(date.today() + timedelta(days=4), time(0, 0)),
-    },
-    # {
-    #     "summary": "Test Event 3",
-    #     "start": datetime.combine(date.today() + timedelta(days=3), time(14, 0)),
-    #     "end": datetime.combine(date.today() + timedelta(days=3), time(15, 0)),
-    # },
-    {
-        "summary": "Test Event 4",
-        "start": datetime.combine(date.today() + timedelta(days=32), time(14, 0)),
-        "end": datetime.combine(date.today() + timedelta(days=32), time(15, 0)),
-    },
-]
+# ----- Helper Functions -----
+def _format_event(event):
+    if isinstance(event["start"], datetime):
+        event["start"] = event["start"].astimezone()
+    else:
+        event["start"] = datetime.combine(
+            event["start"], datetime.min.time()
+        ).astimezone()
+    if isinstance(event["end"], datetime):
+        event["end"] = event["end"].astimezone()
+    else:
+        event["end"] = datetime.combine(event["end"], datetime.min.time()).astimezone()
+
+    return event
+
+
+def _divide_event(event):
+    events = []
+    midnight = datetime.combine(
+        event["start"].date() + timedelta(days=1), time.min
+    ).astimezone()
+
+    if event["end"] <= midnight:
+        return [event]
+
+    total_days = (event["end"] - event["start"]).days + 1
+    idx = 1
+    temp_start = event["start"]
+    temp_end = midnight
+    while temp_end < event["end"]:
+        events.append(
+            {
+                "summary": f"{event.get("summary", "")} ({idx}/{total_days})",
+                "description": f"{event.get("description", "")}",
+                "start": temp_start,
+                "end": temp_end,
+            }
+        )
+        temp_start = temp_end
+        temp_end += timedelta(days=1)
+        idx += 1
+    event["summary"] = f"{event.get('summary', '')} ({idx}/{total_days})"
+    event["start"] = temp_start
+
+    events.append(event)
+    return events
+
 
 if __name__ == "__main__":
     ical_url = [

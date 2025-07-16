@@ -33,7 +33,7 @@ class CalendarPanel(Panel):
         if not events:
             return image
 
-        today = datetime.combine(date.today(), datetime.min.time())
+        today = datetime.combine(date.today(), datetime.min.time()).astimezone()
         events = [
             event for event in events if (event["start"] and event["start"] >= today)
         ]
