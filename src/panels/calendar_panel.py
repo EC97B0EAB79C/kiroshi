@@ -81,7 +81,7 @@ class CalendarPanel(Panel):
             position,
             text,
             font=font,
-            fill=self.settings.get("font_color", "black"),
+            fill="black",
         )
         return (location[0], location[1] + bbox[3] - bbox[1] + self.padding)
 
@@ -99,11 +99,12 @@ class CalendarPanel(Panel):
             position,
             text,
             font=font,
-            fill=self.settings.get("font_color", "black"),
+            fill="black",
         )
         return (location[0], location[1] + bbox[3] - bbox[1] + self.padding)
 
     def _draw_day(self, image, day, font, location):
+        is_today = day.date() == date.today()
         text = day.strftime("%d")
         bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
             (0, 0), text, font=font
@@ -113,11 +114,22 @@ class CalendarPanel(Panel):
             location[1] - bbox[1],
         )
         draw = ImageDraw.Draw(image)
+
+        if is_today:
+            draw.circle(
+                (
+                    location[0] + (bbox[2] - bbox[0]) // 2,
+                    location[1] + (bbox[3] - bbox[1]) // 2,
+                ),
+                radius=(bbox[2] - bbox[0]) // 2 + self.entry_padding,
+                fill="green",
+            )
+        text_fill = "white" if is_today else "black"
         draw.text(
             position,
             text,
             font=font,
-            fill=self.settings.get("font_color", "black"),
+            fill=text_fill,
         )
         return (location[0], location[1])
 
