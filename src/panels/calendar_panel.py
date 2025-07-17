@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta, time
 
 from src.panel import Panel
 import src.helper as Helper
+from src.palette import *
 
 import src.api.ical as IcalAPI
 
@@ -122,7 +123,7 @@ class CalendarPanel(Panel):
                     location[1] + (bbox[3] - bbox[1]) // 2,
                 ),
                 radius=(bbox[2] - bbox[0]) // 2 + self.entry_padding,
-                fill="green",
+                fill=PALETTE_GREEN,
             )
         text_fill = "white" if is_today else "black"
         draw.text(
@@ -154,7 +155,7 @@ class CalendarPanel(Panel):
             and entry["description"]
             and "holiday" in entry["description"].lower()
         ):
-            fill_color = "red"
+            fill_color = PALETTE_RED
 
         draw = ImageDraw.Draw(image)
         draw.rectangle(
