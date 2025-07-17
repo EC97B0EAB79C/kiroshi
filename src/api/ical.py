@@ -38,8 +38,8 @@ def _extract_events(calendar):
     events = []
     for component in calendar.walk("vevent"):
         event = {
-            "description": component.get("description"),
-            "summary": component.get("summary"),
+            "description": component.get("description") or "",
+            "summary": component.get("summary") or "",
             "start": (
                 component.get("dtstart").dt if component.get("dtstart") else None
             ),
@@ -103,8 +103,8 @@ def _divide_event(event):
     while temp_end < event["end"]:
         events.append(
             {
-                "summary": f"{event.get("summary", "")} ({idx}/{total_days})",
-                "description": f"{event.get("description", "")}",
+                "summary": f"{event['summary']} ({idx}/{total_days})",
+                "description": event["description"],
                 "start": temp_start,
                 "end": temp_end,
             }
