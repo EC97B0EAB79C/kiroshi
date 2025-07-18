@@ -1,9 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
+from datetime import datetime, timezone, timedelta
 
 from src.panel import Panel
 import src.helper as Helper
 from src.palette import *
-from datetime import datetime, timezone, timedelta
 
 import src.api.toggl as TogglAPI
 
@@ -65,12 +65,15 @@ class TogglPanel(Panel):
 
         # Draw description
         # Set content
+        font = Helper.load_font(self.font, self.font_size)
         if not entry:
             text_description = "No current\ntime entry"
         else:
             text_description = entry.get("description", "")
+            text_description = Helper.truncate_text(
+                text_description, font, content_width
+            )
         # Draw content
-        font = Helper.load_font(self.font, self.font_size)
         bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
             (0, 0), text_description, font=font, align="left"
         )

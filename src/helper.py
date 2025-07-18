@@ -3,6 +3,7 @@ from src.palette import *
 
 
 def load_font(font_path, font_size):
+    font_size = int(font_size)
     try:
         return ImageFont.truetype(font_path, font_size)
     except Exception as e:
@@ -36,6 +37,18 @@ def cut_text(text, font, max_width):
         lines.append(current_line)
 
     return "\n".join(lines)
+
+
+def truncate_text(text, font, max_width):
+    if font.getbbox(text)[2] <= max_width:
+        return text
+
+    ellipsis = "..."
+    while font.getbbox(text + ellipsis)[2] > max_width:
+        if not text:
+            return ""
+        text = text[:-1]
+    return text + ellipsis
 
 
 def fit_and_crop_picture(picture, target_size):
