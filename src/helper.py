@@ -45,6 +45,8 @@ def truncate_text(text, font, max_width):
 
     ellipsis = "..."
     while font.getbbox(text + ellipsis)[2] > max_width:
+        if not text:
+            return ""
         text = text[:-1]
     return text + ellipsis
 

@@ -39,9 +39,9 @@ class CalendarPanel(Panel):
             event for event in events if (event["start"] and event["start"] >= today)
         ]
 
-        current_month = today.month - 1
-        current_day = today.day - 1
-        current_week = today.isocalendar()[1] - 1
+        current_month = None
+        current_day = None
+        current_week = None
         event_spacing = font.getbbox("000")[2]
         location = (spacing, spacing)
         for event in events:

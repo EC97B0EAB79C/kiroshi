@@ -52,7 +52,7 @@ def _extract_events(calendar):
         divided_events = _divide_event(event)
         events.extend(divided_events)
 
-    events = sorted(events, key=lambda x: x["start"] or datetime.max)
+    events = sorted(events, key=lambda x: x["start"])
     return events
 
 
