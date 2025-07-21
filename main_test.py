@@ -13,6 +13,7 @@ from src.panels.four_panel import FourPanel
 from src.panels.picture_panel import PicturePanel
 from src.panels.toggl_panel import TogglPanel
 from src.panels.calendar_panel import CalendarPanel
+from src.panels.github_panel import GithubPanel
 
 DEBUG = False
 TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
@@ -102,6 +103,23 @@ def get_calendar_panel(size=(800, 480)):
     )
 
 
+def get_github_panel(size=(800, 480)):
+    return GithubPanel(
+        width=size[0],
+        height=size[1],
+        settings={
+            "username": "EC97B0EAB79C",
+            "github_token": os.getenv("GITHUB_TOKEN"),
+            "font": TEST_FONT,
+            "font_size": 24,
+            "font_color": "black",
+            "border_width": 0,
+            "padding": 10,
+        },
+        DEBUG=DEBUG,
+    )
+
+
 def test_picture_panel():
     panel = get_picture_panel()
     image = panel.draw()
@@ -127,7 +145,9 @@ def test_four_panel():
 
     calendar_panel = get_calendar_panel(size)
 
-    panel.set_panels(text_panel, time_panel, toggl_panel, calendar_panel)
+    github_panel = get_github_panel(size)
+
+    panel.set_panels(github_panel, time_panel, toggl_panel, calendar_panel)
     image = panel.draw()
 
     return image
