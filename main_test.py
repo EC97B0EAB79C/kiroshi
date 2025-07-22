@@ -18,6 +18,7 @@ from src.panels.github_panel import GithubPanel
 DEBUG = False
 TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
 TOGGL_API_KEY = os.getenv("TOGGL_API_KEY")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
 def get_picture_panel(size=(800, 480)):
@@ -97,7 +98,9 @@ def get_calendar_panel(size=(800, 480)):
             "font": TEST_FONT,
             "font_size": 24,
             "font_color": "black",
+            "border_width": 0,
             "padding": 10,
+            "margin": 0,
         },
         DEBUG=DEBUG,
     )
@@ -109,7 +112,7 @@ def get_github_panel(size=(800, 480)):
         height=size[1],
         settings={
             "username": "EC97B0EAB79C",
-            "github_token": os.getenv("GITHUB_TOKEN"),
+            "github_token": GITHUB_TOKEN,
             "font": TEST_FONT,
             "font_size": 24,
             "font_color": "black",
@@ -164,26 +167,31 @@ def test_calendar_panel():
 import sys
 import os
 
-picdir = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "pic"
-)
-libdir = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
-)
-if os.path.exists(libdir):
-    sys.path.append(libdir)
-
-from waveshare_epd import epd7in3e
 
 if __name__ == "__main__":
     image = test_four_panel()
     # image = test_picture_panel()
     # image = test_calendar_panel()
 
-    epd = epd7in3e.EPD()
-    epd.init()
-    # epd.Clear()
+    try:
+        picdir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "pic"
+        )
+        libdir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
+        )
+        if os.path.exists(libdir):
+            sys.path.append(libdir)
 
-    # Display the image on the e-Paper
-    epd.display(epd.getbuffer(image))
-    epd.sleep()
+        from waveshare_epd import epd7in3e
+
+        epd = epd7in3e.EPD()
+        epd.init()
+        # epd.Clear()
+
+        # Display the image on the e-Paper
+        epd.display(epd.getbuffer(image))
+        epd.sleep()
+    except:
+        print("Error displaying image on e-Paper")
+        image.save("test_image.png")
