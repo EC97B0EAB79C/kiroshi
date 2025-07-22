@@ -55,6 +55,8 @@ class GithubPanel(Panel):
                         (box_location[0] + box_size, box_location[1] + box_size),
                     ],
                     fill=day_contribution["color"],
+                    outline="black",
+                    width=1,
                 )
                 box_location = (
                     box_location[0],
@@ -64,7 +66,11 @@ class GithubPanel(Panel):
                 box_location[0] - box_size - self.padding,
                 graph_location[1],
             )
-            if box_location[0] < graph_location[0]:
+            if box_location[0] < graph_location[0] - box_size:
                 break
 
+        draw.rectangle(
+            [(0, 0), (graph_location[0], self.height)],
+            fill="white",
+        )
         return image
