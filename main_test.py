@@ -117,7 +117,7 @@ def get_github_panel(size=(800, 480)):
             "font_size": 24,
             "font_color": "black",
             "border_width": 0,
-            "padding": 10,
+            "padding": 5,
         },
         DEBUG=DEBUG,
     )

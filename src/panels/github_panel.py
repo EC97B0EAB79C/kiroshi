@@ -20,7 +20,7 @@ class GithubPanel(Panel):
         self.github_token = settings.get("github_token")
 
         # Margin, padding and border settings
-        self.padding = settings.get("padding", 10)
+        self.padding = settings.get("padding", 5)
 
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
