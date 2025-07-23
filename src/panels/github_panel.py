@@ -31,6 +31,10 @@ class GithubPanel(Panel):
             self.username, self.github_token
         )
 
+        if contributions is None:
+            image = self._draw_api_invalid(image)
+            return super()._draw(image)
+
         graph_location = (spacing, spacing)
         graph_size = (
             image.width - spacing * 2,
@@ -73,4 +77,12 @@ class GithubPanel(Panel):
             [(0, 0), (graph_location[0], self.height)],
             fill="white",
         )
-        return image
+        return Helper.quantize_image(image, self.palette_name)
+
+    def _draw_api_invalid(self, image):
+        return Helper.invalid_image(
+            image,
+            self.width,
+            self.height,
+            "GitHub API Error:\nInvalid Username or Token",
+        )

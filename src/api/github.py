@@ -5,8 +5,8 @@ import os
 def get_github_contributions(username, token, year=None):
     result = _graphql_query(username, token, year)
     if result:
-        return result["contributionCalendar"]["weeks"]
-    return []
+        return result.get("contributionCalendar", {}).get("weeks", [])
+    return None
 
 
 def _graphql_query(username, token, year=None):
