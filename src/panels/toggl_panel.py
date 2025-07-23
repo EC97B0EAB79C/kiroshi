@@ -235,7 +235,7 @@ class TogglPanel(Panel):
         return image
 
     def _draw_api_invalid(self, image):
-        return Helper.draw_api_invalid(
+        return Helper.invalid_image(
             image, self.width, self.height, "Toggl API key is invalid"
         )
 
