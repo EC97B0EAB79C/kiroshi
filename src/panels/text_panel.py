@@ -50,7 +50,7 @@ class TextPanel(Panel):
             align=self.align,
         )
 
-        return image
+        return super()._draw(image)
 
     def _draw_debug(self, image):
         draw = ImageDraw.Draw(image)

@@ -30,7 +30,7 @@ class HorizontalPanel(Panel):
         panel2_image = self.panel2.draw()
         image.paste(panel2_image, (self.width // 2 + self.padding, spacing))
 
-        return image
+        return super()._draw(image)
 
     def _draw_border(self, image):
         draw = ImageDraw.Draw(image)

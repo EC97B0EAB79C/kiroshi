@@ -43,7 +43,7 @@ class TogglPanel(Panel):
 
         image = Helper.quantize_image(image, self.palette_name)
 
-        return image
+        return super()._draw(image)
 
     def _get_project_details(self, project_id, workspace_id=None):
         if not project_id:
@@ -269,10 +269,6 @@ class TogglPanel(Panel):
         draw.text((text_x, text_y), text, fill="black", font=font)
 
         return image
-
-    def _draw_border(self, image):
-
-        return super()._draw_border(image)
 
     def _draw_debug(self, image):
         draw = ImageDraw.Draw(image)

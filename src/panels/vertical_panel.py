@@ -21,9 +21,7 @@ class VerticalPanel(Panel):
             (self.height - self.margin * 2) // 2 - self.padding * 2,
         )
 
-    def draw(self):
-        image = super().draw()
-
+    def _draw(self, image):
         spacing = self.margin + self.padding
 
         panel1_image = self.panel1.draw()
@@ -32,7 +30,7 @@ class VerticalPanel(Panel):
         panel2_image = self.panel2.draw()
         image.paste(panel2_image, (spacing, self.height // 2 + self.padding))
 
-        return image
+        return super()._draw(image)
 
     def _draw_border(self, image):
         draw = ImageDraw.Draw(image)

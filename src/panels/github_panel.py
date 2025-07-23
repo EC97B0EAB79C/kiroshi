@@ -39,7 +39,7 @@ class GithubPanel(Panel):
 
         image = self._draw_graph(image, contributions, graph_location, graph_size)
 
-        return image
+        return super()._draw(image)
 
     def _draw_graph(self, image, contributions, graph_location, graph_size):
         draw = ImageDraw.Draw(image)

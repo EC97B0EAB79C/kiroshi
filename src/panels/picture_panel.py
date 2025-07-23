@@ -27,4 +27,4 @@ class PicturePanel(Panel):
         picture = Helper.quantize_image(picture, self.palette_name)
 
         image.paste(picture, (self.margin, self.margin))
-        return image
+        return super()._draw(image)

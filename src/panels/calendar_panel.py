@@ -66,7 +66,7 @@ class CalendarPanel(Panel):
         draw.rectangle(
             [(0, self.height - spacing), (self.width, self.height)], fill="white"
         )
-        return image
+        return super()._draw(image)
 
     def _draw_month(self, image, month, font, location, spacing):
         text = month.strftime("%Y %B")

@@ -5,7 +5,7 @@ from src.panels.text_panel import TextPanel
 
 
 class TimePanel(TextPanel):
-    def __inti__(self, width=800, height=480, settings={}, DEBUG=False):
+    def __init__(self, width=800, height=480, settings={}, DEBUG=False):
         super().__init__(width, height, settings, DEBUG)
 
     def _draw(self, image):
