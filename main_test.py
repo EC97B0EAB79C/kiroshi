@@ -111,7 +111,7 @@ def get_github_panel(size=(800, 480)):
         width=size[0],
         height=size[1],
         settings={
-            "username": "EC97B0EAB79C",
+            "username": "TEST_USERNAME",
             "github_token": GITHUB_TOKEN,
             "font": TEST_FONT,
             "font_size": 24,
@@ -192,6 +192,6 @@ if __name__ == "__main__":
         # Display the image on the e-Paper
         epd.display(epd.getbuffer(image))
         epd.sleep()
-    except:
-        print("Error displaying image on e-Paper")
+    except Exception as e:
+        print(f"Error displaying image on e-Paper: {e}")
         image.save("test_image.png")

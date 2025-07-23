@@ -15,7 +15,7 @@ class GithubPanel(Panel):
         self.font = settings.get("font")
         self.font_size = settings.get("font_size", 10)
 
-        # Github settings
+        # GitHub API settings
         self.username = settings.get("username")
         self.github_token = settings.get("github_token")
 

@@ -54,7 +54,7 @@ def _graphql_query(username, token, year=None):
 
 
 if __name__ == "__main__":
-    username = "EC97B0EAB79C"
+    username = "TEST_USERNAME"
     token = os.getenv("GITHUB_TOKEN")
     contributions = get_github_contributions(username, token)
 
