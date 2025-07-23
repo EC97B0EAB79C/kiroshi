@@ -13,10 +13,12 @@ from src.panels.four_panel import FourPanel
 from src.panels.picture_panel import PicturePanel
 from src.panels.toggl_panel import TogglPanel
 from src.panels.calendar_panel import CalendarPanel
+from src.panels.github_panel import GithubPanel
 
 DEBUG = False
 TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
 TOGGL_API_KEY = os.getenv("TOGGL_API_KEY")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
 def get_picture_panel(size=(800, 480)):
@@ -96,7 +98,26 @@ def get_calendar_panel(size=(800, 480)):
             "font": TEST_FONT,
             "font_size": 24,
             "font_color": "black",
+            "border_width": 0,
             "padding": 10,
+            "margin": 0,
+        },
+        DEBUG=DEBUG,
+    )
+
+
+def get_github_panel(size=(800, 480)):
+    return GithubPanel(
+        width=size[0],
+        height=size[1],
+        settings={
+            "username": "TEST_USERNAME",
+            "github_token": GITHUB_TOKEN,
+            "font": TEST_FONT,
+            "font_size": 24,
+            "font_color": "black",
+            "border_width": 0,
+            "padding": 5,
         },
         DEBUG=DEBUG,
     )
@@ -127,7 +148,9 @@ def test_four_panel():
 
     calendar_panel = get_calendar_panel(size)
 
-    panel.set_panels(text_panel, time_panel, toggl_panel, calendar_panel)
+    github_panel = get_github_panel(size)
+
+    panel.set_panels(github_panel, time_panel, toggl_panel, calendar_panel)
     image = panel.draw()
 
     return image
@@ -144,26 +167,31 @@ def test_calendar_panel():
 import sys
 import os
 
-picdir = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "pic"
-)
-libdir = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
-)
-if os.path.exists(libdir):
-    sys.path.append(libdir)
-
-from waveshare_epd import epd7in3e
 
 if __name__ == "__main__":
     image = test_four_panel()
     # image = test_picture_panel()
     # image = test_calendar_panel()
 
-    epd = epd7in3e.EPD()
-    epd.init()
-    # epd.Clear()
+    try:
+        picdir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "pic"
+        )
+        libdir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
+        )
+        if os.path.exists(libdir):
+            sys.path.append(libdir)
 
-    # Display the image on the e-Paper
-    epd.display(epd.getbuffer(image))
-    epd.sleep()
+        from waveshare_epd import epd7in3e
+
+        epd = epd7in3e.EPD()
+        epd.init()
+        # epd.Clear()
+
+        # Display the image on the e-Paper
+        epd.display(epd.getbuffer(image))
+        epd.sleep()
+    except Exception as e:
+        print(f"Error displaying image on e-Paper: {e}")
+        image.save("test_image.png")
