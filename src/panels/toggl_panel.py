@@ -235,40 +235,9 @@ class TogglPanel(Panel):
         return image
 
     def _draw_api_invalid(self, image):
-        draw = ImageDraw.Draw(image)
-        font = Helper.load_font("fonts/roboto_mono/static/RobotoMono-Regular.ttf", 24)
-
-        text = "Toggl API key is invalid"
-        text_size = draw.textbbox((0, 0), text, font=font)
-
-        try:
-            # Load error icon
-            icon_path = "icons/error_72dp.png"
-            error_icon = Image.open(icon_path).convert("RGBA")
-            transparent_bg = Image.new("RGBA", error_icon.size, (255, 255, 255, 0))
-            error_icon = Image.alpha_composite(transparent_bg, error_icon)
-
-            # Icon positioning
-            spacing = 20
-            combined_height = error_icon.height + spacing + text_size[3]
-            start_y = (self.height - combined_height) // 2
-            icon_x = (self.width - error_icon.width) // 2
-            icon_y = start_y
-            image.paste(error_icon, (icon_x, icon_y))
-
-            # Text positioning
-            text_x = (self.width - text_size[2]) // 2
-            text_y = start_y + error_icon.height + spacing
-
-        except Exception as e:
-            print(f"Error loading icon: {e}")
-            # Fallback to center text only if icon fails
-            text_x = (self.width - text_size[2]) // 2
-            text_y = (self.height - text_size[3]) // 2
-
-        draw.text((text_x, text_y), text, fill="black", font=font)
-
-        return image
+        return Helper.draw_api_invalid(
+            image, self.width, self.height, "Toggl API key is invalid"
+        )
 
     def _draw_debug(self, image):
         draw = ImageDraw.Draw(image)

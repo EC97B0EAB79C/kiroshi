@@ -78,3 +78,44 @@ def quantize_image(image, palette):
     palette_image = Image.new("P", (1, 1))
     palette_image.putpalette(palette_colors)
     return image.quantize(palette=palette_image, dither=Image.Dither.FLOYDSTEINBERG)
+
+
+def invalid_image(image, width, height, text="Invalid API Response", spacing=10):
+    draw = ImageDraw.Draw(image)
+    font_size = 48
+    while font_size > 0:
+        font = load_font("fonts/roboto_mono/static/RobotoMono-Regular.ttf", font_size)
+        text_size = draw.textbbox((0, 0), text, font=font)
+        if (text_size[2] - text_size[0]) <= (width - spacing * 2) and (
+            text_size[3] - text_size[1]
+        ) <= (height - spacing * 2):
+            break
+        font_size -= 1
+
+    text_size = draw.textbbox((0, 0), text, font=font)
+
+    try:
+        icon_path = "icons/error_72dp.png"
+        error_icon = Image.open(icon_path).convert("RGBA")
+        transparent_bg = Image.new("RGBA", error_icon.size, (255, 255, 255, 0))
+        error_icon = Image.alpha_composite(transparent_bg, error_icon)
+
+        distance = 20
+        combined_height = error_icon.height + distance + text_size[3]
+        start_y = (height - combined_height) // 2
+        icon_x = (width - error_icon.width) // 2
+        icon_y = start_y
+        image.paste(error_icon, (icon_x, icon_y))
+
+        text_x = (width - text_size[2]) // 2
+        text_y = start_y + error_icon.height + distance
+
+    except Exception as e:
+        print(f"Error loading icon: {e}")
+        text_x = (width - text_size[2]) // 2
+        text_y = (height - text_size[3]) // 2
+
+    if font_size > 0:
+        draw.text((text_x, text_y), text, fill="black", font=font, align="center")
+
+    return image
