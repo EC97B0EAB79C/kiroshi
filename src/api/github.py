@@ -47,7 +47,14 @@ def _graphql_query(username, token, year=None):
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
-        return data.get("data", {}).get("user", {}).get("contributionsCollection", {})
+        if data is None:
+            return None
+        if data.get("data") is None:
+            return None
+        if data.get("data").get("user") is None:
+            return None
+
+        return data.get("data").get("user").get("contributionsCollection", {})
     except requests.RequestException as e:
         print(f"Error fetching contributions: {e}")
         return None
