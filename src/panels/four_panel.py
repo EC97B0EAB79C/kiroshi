@@ -10,7 +10,6 @@ class FourPanel(Panel):
         height=480,
         settings={},
         DEBUG=False,
-        /,
         panel1=None,
         panel2=None,
         panel3=None,
@@ -25,7 +24,6 @@ class FourPanel(Panel):
 
     def set_panels(
         self,
-        /,
         panel1: Panel = None,
         panel2: Panel = None,
         panel3: Panel = None,

@@ -29,6 +29,10 @@ class TogglPanel(Panel):
         # Debug settings
         self.debug_boxes = []
 
+    def set_size(self, width, height):
+        super().set_size(width, height)
+        self.font_size = 96 / 480 * self.height
+
     def _draw(self, image):
         if not self.api_key_status:
             image = self._draw_api_invalid(image)

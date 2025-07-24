@@ -10,7 +10,6 @@ class HorizontalPanel(Panel):
         height=480,
         settings={},
         DEBUG=False,
-        /,
         panel1=None,
         panel2=None,
     ):
@@ -21,7 +20,7 @@ class HorizontalPanel(Panel):
 
         self.set_panels(panel1, panel2)
 
-    def set_panels(self, /, panel1: Panel = None, panel2: Panel = None):
+    def set_panels(self, panel1: Panel = None, panel2: Panel = None):
         if isinstance(panel1, Panel):
             self.panel1 = panel1
         if isinstance(panel2, Panel):
