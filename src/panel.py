@@ -16,6 +16,10 @@ class Panel:
         # Quantization settings
         self.palette_name = settings.get("palette", "6_colors")
 
+    def set_size(self, width, height):
+        self.width = width
+        self.height = height
+
     def draw(self):
         image = Image.new("RGB", (self.width, self.height), "white")
         image = self._draw(image)

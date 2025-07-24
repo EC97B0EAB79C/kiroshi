@@ -111,7 +111,7 @@ def get_github_panel(size=(800, 480)):
         width=size[0],
         height=size[1],
         settings={
-            "username": "TEST_USERNAME",
+            "username": "EC97B0EAB79C",
             "github_token": GITHUB_TOKEN,
             "font": TEST_FONT,
             "font_size": 24,
@@ -130,6 +130,12 @@ def test_picture_panel():
 
 
 def test_four_panel():
+    text_panel = get_text_panel()
+    time_panel = get_time_panel()
+    toggl_panel = get_toggl_panel()
+    calendar_panel = get_calendar_panel()
+    github_panel = get_github_panel()
+
     panel = FourPanel(
         width=800,
         height=480,
@@ -137,20 +143,11 @@ def test_four_panel():
             "padding": 0,
         },
         DEBUG=DEBUG,
+        panel1=github_panel,
+        panel2=time_panel,
+        panel3=toggl_panel,
+        panel4=calendar_panel,
     )
-    size = panel.get_panel_size()
-
-    text_panel = get_text_panel(size)
-
-    time_panel = get_time_panel(size)
-
-    toggl_panel = get_toggl_panel(size)
-
-    calendar_panel = get_calendar_panel(size)
-
-    github_panel = get_github_panel(size)
-
-    panel.set_panels(github_panel, time_panel, toggl_panel, calendar_panel)
     image = panel.draw()
 
     return image
