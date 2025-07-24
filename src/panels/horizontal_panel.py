@@ -29,6 +29,10 @@ class HorizontalPanel(Panel):
 
         self._set_panel_size()
 
+    def set_size(self, width, height):
+        super().set_size(width, height)
+        self._set_panel_size()
+
     def get_panel_size(self):
         spacing = self.margin + self.padding
         return (

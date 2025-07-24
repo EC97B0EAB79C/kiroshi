@@ -20,9 +20,15 @@ class TextPanel(Panel):
         # Initialize text and position
         self.update_text(settings.get("text", ""))
 
+    def set_size(self, width, height):
+        super().set_size(width, height)
+        self._update_text_size()
+
     def update_text(self, text):
         self.text = text
+        self._update_text_size()
 
+    def _update_text_size(self):
         self.spacing = self.margin + self.padding
 
         font = Helper.load_font(self.font, self.font_size)

@@ -42,6 +42,10 @@ class FourPanel(Panel):
 
         self._set_panel_size()
 
+    def set_size(self, width, height):
+        super().set_size(width, height)
+        self._set_panel_size()
+
     def get_panel_size(self):
         return (
             (self.width - self.margin * 2) // 2 - self.padding * 2,
