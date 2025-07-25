@@ -1,0 +1,56 @@
+[
+  {
+    "type": "four",
+    "width": 800,
+    "height": 480,
+    "settings": {
+      "padding": 10
+    },
+    "panels": [
+      {
+        "type": "github",
+        "settings": {
+          "username": "EC97B0EAB79C",
+          "font_size": 24,
+          "font_color": "black",
+          "border_width": 0,
+          "padding": 5
+        }
+      },
+      {
+        "type": "time",
+        "settings": {
+          "font_size": 24,
+          "font_color": "black",
+          "align": "center",
+          "margin": 10,
+          "padding": 10
+        }
+      },
+      {
+        "type": "toggl",
+        "settings": {
+          "margin": 0,
+          "padding": 10,
+          "border_color": "black",
+          "border_width": 0,
+          "font": "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf"
+        }
+      },
+      {
+        "type": "calendar",
+        "settings": {
+          "ical_urls": [
+            "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics",
+            "https://calendar.google.com/calendar/ical/en.south_korea%23holiday%40group.v.calendar.google.com/public/basic.ics"
+          ],
+          "font_size": 24,
+          "font_color": "black",
+          "border_width": 0,
+          "padding": 10,
+          "margin": 0
+        }
+      }
+    ]
+  }
+]
