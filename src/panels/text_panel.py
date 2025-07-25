@@ -3,13 +3,15 @@ from PIL import Image, ImageDraw, ImageFont
 from src.panel import Panel
 import src.helper as Helper
 
+DEFAULT_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
+
 
 class TextPanel(Panel):
     def __init__(self, width=800, height=480, settings={}, DEBUG=False):
         super().__init__(width, height, settings, DEBUG)
 
         # Text settings
-        self.font = settings.get("font")
+        self.font = settings.get("font", DEFAULT_FONT)
         self.font_size = settings.get("font_size", 24)
         self.font_color = settings.get("font_color", "black")
         self.align = settings.get("align", "center")

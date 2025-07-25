@@ -7,13 +7,15 @@ from src.palette import *
 
 import src.api.toggl as TogglAPI
 
+DEFAULT_FONT = "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf"
+
 
 class TogglPanel(Panel):
     def __init__(self, width, height, settings=None, DEBUG=False):
         super().__init__(width, height, settings, DEBUG)
 
         # Text settings
-        self.font = settings.get("font")
+        self.font = settings.get("font", DEFAULT_FONT)
         self.font_size = 96 / 480 * self.height
 
         # Toggl API settings
