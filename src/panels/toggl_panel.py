@@ -1,3 +1,5 @@
+import os
+
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timezone, timedelta
 
@@ -8,6 +10,7 @@ from src.palette import *
 import src.api.toggl as TogglAPI
 
 DEFAULT_FONT = "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf"
+TOGGL_API_KEY = os.getenv("TOGGL_API_KEY")
 
 
 class TogglPanel(Panel):
@@ -19,7 +22,7 @@ class TogglPanel(Panel):
         self.font_size = 96 / 480 * self.height
 
         # Toggl API settings
-        self.auth = f"{settings.get('api_key', '')}:api_token"
+        self.auth = f"{settings.get('api_key', TOGGL_API_KEY)}:api_token"
         self.api_key_status = TogglAPI.verify_api_key(self.auth)
 
         # Margin, padding and border settings

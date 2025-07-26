@@ -1,3 +1,5 @@
+import os
+
 from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
@@ -5,6 +7,8 @@ import src.helper as Helper
 from src.palette import *
 
 import src.api.github as GithubAPI
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
 class GithubPanel(Panel):
@@ -17,7 +21,7 @@ class GithubPanel(Panel):
 
         # GitHub API settings
         self.username = settings.get("username")
-        self.github_token = settings.get("github_token")
+        self.github_token = settings.get("github_token", GITHUB_TOKEN)
 
         # Margin, padding and border settings
         self.padding = settings.get("padding", 5)
