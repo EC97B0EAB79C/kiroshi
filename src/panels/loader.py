@@ -16,8 +16,8 @@ def load_panel(panel_spec):
     if panel_spec["type"] == "four":
         inner_panels = [load_panel(spec) for spec in panel_spec["panels"]]
         return FourPanel(
-            width=panel_spec.get("width", None),
-            height=panel_spec.get("height", None),
+            width=panel_spec.get("width", 0),
+            height=panel_spec.get("height", 0),
             settings=panel_spec.get("settings", {}),
             panel1=inner_panels[0] if len(inner_panels) > 0 else None,
             panel2=inner_panels[1] if len(inner_panels) > 1 else None,
@@ -43,8 +43,8 @@ def load_panel(panel_spec):
     panel_type = panel_spec["type"]
     if panel_type in panel_classes:
         return panel_classes[panel_type](
-            width=panel_spec.get("width", None),
-            height=panel_spec.get("height", None),
+            width=panel_spec.get("width", 0),
+            height=panel_spec.get("height", 0),
             settings=panel_spec.get("settings", {}),
         )
 
