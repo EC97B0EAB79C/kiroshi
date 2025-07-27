@@ -15,34 +15,37 @@ from src.panels.github_panel import GithubPanel
 def load_panel(panel_spec):
     if panel_spec["type"] == "four":
         inner_panels = [load_panel(spec) for spec in panel_spec["panels"]]
+        inner_panels += [None] * (4 - len(inner_panels))
         return FourPanel(
             width=panel_spec.get("width", 0),
             height=panel_spec.get("height", 0),
             settings=panel_spec.get("settings", {}),
-            panel1=inner_panels[0] if len(inner_panels) > 0 else None,
-            panel2=inner_panels[1] if len(inner_panels) > 1 else None,
-            panel3=inner_panels[2] if len(inner_panels) > 2 else None,
-            panel4=inner_panels[3] if len(inner_panels) > 3 else None,
+            panel1=inner_panels[0],
+            panel2=inner_panels[1],
+            panel3=inner_panels[2],
+            panel4=inner_panels[3],
         )
 
-    if panel_spec["type"] == "horizontal":
+    elif panel_spec["type"] == "horizontal":
         inner_panels = [load_panel(spec) for spec in panel_spec["panels"]]
+        inner_panels += [None] * (2 - len(inner_panels))
         return HorizontalPanel(
             width=panel_spec.get("width", 0),
             height=panel_spec.get("height", 0),
             settings=panel_spec.get("settings", {}),
-            panel1=inner_panels[0] if len(inner_panels) > 0 else None,
-            panel2=inner_panels[1] if len(inner_panels) > 1 else None,
+            panel1=inner_panels[0],
+            panel2=inner_panels[1],
         )
 
-    if panel_spec["type"] == "vertical":
+    elif panel_spec["type"] == "vertical":
         inner_panels = [load_panel(spec) for spec in panel_spec["panels"]]
+        inner_panels += [None] * (2 - len(inner_panels))
         return VerticalPanel(
             width=panel_spec.get("width", 0),
             height=panel_spec.get("height", 0),
             settings=panel_spec.get("settings", {}),
-            panel1=inner_panels[0] if len(inner_panels) > 0 else None,
-            panel2=inner_panels[1] if len(inner_panels) > 1 else None,
+            panel1=inner_panels[0],
+            panel2=inner_panels[1],
         )
 
     panel_classes = {
