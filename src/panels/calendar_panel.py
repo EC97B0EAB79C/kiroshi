@@ -7,13 +7,15 @@ from src.palette import *
 
 import src.api.ical as IcalAPI
 
+DEFAULT_FONT = "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf"
+
 
 class CalendarPanel(Panel):
     def __init__(self, width, height, settings, DEBUG=False):
         super().__init__(width, height, settings, DEBUG)
 
         # Text settings
-        self.font = settings.get("font")
+        self.font = settings.get("font", DEFAULT_FONT)
         self.font_size = settings.get("font_size", 10)
 
         # Calendar settings

@@ -198,3 +198,4 @@ cython_debug/
 fonts/
 icons/
 .cache/
+example/

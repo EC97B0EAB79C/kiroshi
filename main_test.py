@@ -2,173 +2,27 @@
 
 import os
 
-from PIL import Image, ImageDraw, ImageFont
-
-from src.panel import Panel
-from src.panels.text_panel import TextPanel
-from src.panels.time_panel import TimePanel
-from src.panels.horizontal_panel import HorizontalPanel
-from src.panels.vertical_panel import VerticalPanel
-from src.panels.four_panel import FourPanel
-from src.panels.picture_panel import PicturePanel
-from src.panels.toggl_panel import TogglPanel
-from src.panels.calendar_panel import CalendarPanel
-from src.panels.github_panel import GithubPanel
 
 DEBUG = False
-TEST_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
-TOGGL_API_KEY = os.getenv("TOGGL_API_KEY")
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
-def get_picture_panel(size=(800, 480)):
-    # picture = "../pic/Cyberpunk2077_Wallpapers_TraumaTeam_3840x2160_EN.png"
-    picture = "../pic/kv_pc.jpg"
-
-    panel = PicturePanel(
-        width=size[0],
-        height=size[1],
-        settings={},
-        DEBUG=DEBUG,
-    )
-    panel.set_picture(picture)
-    return panel
-
-
-def get_time_panel(size=(800, 480)):
-    return TimePanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "font": TEST_FONT,
-            "font_size": 24,
-            "font_color": "black",
-            "align": "center",
-            "margin": 10,
-            "padding": 10,
-        },
-        DEBUG=DEBUG,
-    )
-
-
-def get_text_panel(size=(800, 480)):
-    text = "The quick brown fox jumps over the lazy dog."
-
-    return TextPanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "text": text,
-            "font": TEST_FONT,
-            "font_size": 24,
-            "font_color": "black",
-            "align": "center",
-            "margin": 10,
-            "padding": 10,
-        },
-        DEBUG=DEBUG,
-    )
-
-
-def get_toggl_panel(size=(800, 480)):
-    return TogglPanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "api_key": TOGGL_API_KEY,
-            "margin": 0,
-            "padding": 10,
-            "border_color": "black",
-            "border_width": 0,
-            "font": "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf",
-        },
-        DEBUG=DEBUG,
-    )
-
-
-def get_calendar_panel(size=(800, 480)):
-    return CalendarPanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "ical_urls": [
-                "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics",
-                "https://calendar.google.com/calendar/ical/en.south_korea%23holiday%40group.v.calendar.google.com/public/basic.ics",
-            ],
-            "font": TEST_FONT,
-            "font_size": 24,
-            "font_color": "black",
-            "border_width": 0,
-            "padding": 10,
-            "margin": 0,
-        },
-        DEBUG=DEBUG,
-    )
-
-
-def get_github_panel(size=(800, 480)):
-    return GithubPanel(
-        width=size[0],
-        height=size[1],
-        settings={
-            "username": "EC97B0EAB79C",
-            "github_token": GITHUB_TOKEN,
-            "font": TEST_FONT,
-            "font_size": 24,
-            "font_color": "black",
-            "border_width": 0,
-            "padding": 5,
-        },
-        DEBUG=DEBUG,
-    )
-
-
-def test_picture_panel():
-    panel = get_picture_panel()
-    image = panel.draw()
-    return image
-
-
-def test_four_panel():
-    text_panel = get_text_panel()
-    time_panel = get_time_panel()
-    toggl_panel = get_toggl_panel()
-    calendar_panel = get_calendar_panel()
-    github_panel = get_github_panel()
-
-    panel = FourPanel(
-        width=800,
-        height=480,
-        settings={
-            "padding": 0,
-        },
-        DEBUG=DEBUG,
-        panel1=github_panel,
-        panel2=time_panel,
-        panel3=toggl_panel,
-        panel4=calendar_panel,
-    )
-    image = panel.draw()
-
-    return image
-
-
-def test_calendar_panel():
-
-    panel = get_calendar_panel()
-    image = panel.draw()
-
-    return image
-
+from src.panels.loader import load_panel
 
 import sys
 import os
-
+import json
 
 if __name__ == "__main__":
-    image = test_four_panel()
-    # image = test_picture_panel()
-    # image = test_calendar_panel()
+    PANEL_FILE_PATH = "example/four_panel.json"
+    try:
+        with open(PANEL_FILE_PATH, "r") as f:
+            config = json.load(f)
+    except Exception as e:
+        print(f"Error loading panel configuration from {PANEL_FILE_PATH}: {e}")
+        sys.exit(1)
+
+    panel = load_panel(config[0])
+    image = panel.draw()
 
     try:
         picdir = os.path.join(
