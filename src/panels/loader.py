@@ -26,10 +26,24 @@ def load_panel(panel_spec):
         )
 
     if panel_spec["type"] == "horizontal":
-        raise NotImplementedError("HorizontalPanel is not implemented yet")
+        inner_panels = [load_panel(spec) for spec in panel_spec["panels"]]
+        return HorizontalPanel(
+            width=panel_spec.get("width", 0),
+            height=panel_spec.get("height", 0),
+            settings=panel_spec.get("settings", {}),
+            panel1=inner_panels[0] if len(inner_panels) > 0 else None,
+            panel2=inner_panels[1] if len(inner_panels) > 1 else None,
+        )
 
     if panel_spec["type"] == "vertical":
-        raise NotImplementedError("VerticalPanel is not implemented yet")
+        inner_panels = [load_panel(spec) for spec in panel_spec["panels"]]
+        return VerticalPanel(
+            width=panel_spec.get("width", 0),
+            height=panel_spec.get("height", 0),
+            settings=panel_spec.get("settings", {}),
+            panel1=inner_panels[0] if len(inner_panels) > 0 else None,
+            panel2=inner_panels[1] if len(inner_panels) > 1 else None,
+        )
 
     panel_classes = {
         "text": TextPanel,
