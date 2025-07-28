@@ -9,6 +9,8 @@ class PicturePanel(Panel):
         super().__init__(width, height, settings, DEBUG)
         if settings and "picture" in settings:
             self.set_picture(settings["picture"])
+        else:
+            self.picture = None
 
     def set_picture(self, picture_path):
         self.picture = Image.open(picture_path).convert("RGB")
