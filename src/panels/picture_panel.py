@@ -7,7 +7,8 @@ import src.helper as Helper
 class PicturePanel(Panel):
     def __init__(self, width, height, settings=None, DEBUG=False):
         super().__init__(width, height, settings, DEBUG)
-        self.picture = None
+        if settings and "picture" in settings:
+            self.set_picture(settings["picture"])
 
     def set_picture(self, picture_path):
         self.picture = Image.open(picture_path).convert("RGB")
