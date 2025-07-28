@@ -1,5 +1,6 @@
 [
   {
+    "id": 0,
     "type": "four",
     "width": 800,
     "height": 480,
@@ -52,5 +53,14 @@
         }
       }
     ]
+  },
+  {
+    "id": 1,
+    "type": "picture",
+    "width": 800,
+    "height": 480,
+    "settings": {
+      "picture": "kv_pc.jpg"
+    }
   }
 ]
