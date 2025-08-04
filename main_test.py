@@ -1,19 +1,18 @@
 #!/usr/bin/python
 
+import sys
 import os
+import json
+
+
+from src.panels.loader import load_panel
 
 
 DEBUG = False
 
 
-from src.panels.loader import load_panel
-
-import sys
-import os
-import json
-
 if __name__ == "__main__":
-    PANEL_FILE_PATH = "example/four_panel.json"
+    PANEL_FILE_PATH = "example/panels.json"
     try:
         with open(PANEL_FILE_PATH, "r") as f:
             config = json.load(f)
