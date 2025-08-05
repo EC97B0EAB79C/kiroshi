@@ -31,6 +31,11 @@ class TogglPanel(Panel):
         # Toggl Data
         self.projects = TogglAPI.get_workspace_projects(self.auth, self.api_key_status)
 
+        # Request settings
+        self.request_interval = settings.get("request_interval", 0)
+        self.request_recent = datetime.min
+        self.cache = None
+
         # Debug settings
         self.debug_boxes = []
 
@@ -38,14 +43,27 @@ class TogglPanel(Panel):
         super().set_size(width, height)
         self.font_size = 96 / 480 * self.height
 
+    def _request(self):
+        if (self.cache is not None) and (
+            datetime.now() - self.request_recent
+            < timedelta(minutes=self.request_interval)
+        ):
+            return self.cache
+
+        time_entries = TogglAPI.get_time_entries(
+            self.auth, (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        )
+        self.cache = time_entries
+        self.request_recent = datetime.now()
+
+        return self.cache
+
     def _draw(self, image):
         if not self.api_key_status:
             image = self._draw_api_invalid(image)
             return image
 
-        time_entries = TogglAPI.get_time_entries(
-            self.auth, (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-        )
+        time_entries = self._request()
         current_entry = time_entries[0]
         image = self._draw_current_entry(image, current_entry)
         image = self._draw_summary(image, time_entries)
