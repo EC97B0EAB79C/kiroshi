@@ -14,6 +14,12 @@ class Setting:
                 f"Failed to load panels from {self.settings.get('panel_spec', 'example/panels.json')}"
             )
 
+        if self.settings.get("width", 0) <= 0 or self.settings.get("height", 0) <= 0:
+            raise ValueError("Width or height is not set or invalid")
+        for panel in self.panels:
+            panel["width"] = self.settings.get("width", 0)
+            panel["height"] = self.settings.get("height", 0)
+
         self.schedule = self.settings.get("schedule", [])
         if not self.schedule:
             raise ValueError("No schedule found in settings")
