@@ -25,6 +25,24 @@ class CalendarPanel(Panel):
         self.padding = settings.get("padding", 10)
         self.entry_padding = settings.get("entry_padding", 5)
 
+        # Request settings
+        self.request_interval = settings.get("request_interval", 0)
+        self.request_recent = datetime.min
+        self.cache = None
+
+    def _request(self):
+        if (self.cache is not None) and (
+            datetime.now() - self.request_recent
+            < timedelta(minutes=self.request_interval)
+        ):
+            return self.cache
+
+        events = IcalAPI.get_events(self.ical_urls)
+        self.cache = events
+        self.request_recent = datetime.now()
+
+        return self.cache
+
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
 
@@ -32,7 +50,7 @@ class CalendarPanel(Panel):
 
         font = Helper.load_font(self.font, self.font_size)
 
-        events = IcalAPI.get_events(self.ical_urls)
+        events = self._request()
         if not events:
             return image
 

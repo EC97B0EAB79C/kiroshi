@@ -1,6 +1,7 @@
 import os
 
 from PIL import Image, ImageDraw, ImageFont
+from datetime import datetime, timezone, timedelta
 
 from src.panel import Panel
 import src.helper as Helper
@@ -26,14 +27,32 @@ class GithubPanel(Panel):
         # Margin, padding and border settings
         self.padding = settings.get("padding", 5)
 
+        # Request settings
+        self.request_interval = settings.get("request_interval", 0)
+        self.request_recent = datetime.min
+        self.cache = None
+
+    def _request(self):
+        if (self.cache is not None) and (
+            datetime.now() - self.request_recent
+            < timedelta(minutes=self.request_interval)
+        ):
+            return self.cache
+
+        contributions = GithubAPI.get_github_contributions(
+            self.username, self.github_token
+        )
+        self.cache = contributions
+        self.request_recent = datetime.now()
+
+        return self.cache
+
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
 
         spacing = self.padding + self.margin
 
-        contributions = GithubAPI.get_github_contributions(
-            self.username, self.github_token
-        )
+        contributions = self._request()
 
         if contributions is None:
             image = self._draw_api_invalid(image)
