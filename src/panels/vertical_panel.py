@@ -27,6 +27,7 @@ class VerticalPanel(Panel):
             self.panel2 = panel2
 
         self._set_panel_size()
+        self._set_panel_palette()
 
     def set_size(self, width, height):
         super().set_size(width, height)
@@ -45,6 +46,12 @@ class VerticalPanel(Panel):
             self.panel1.set_size(target_width, target_height)
         if isinstance(self.panel2, Panel):
             self.panel2.set_size(target_width, target_height)
+
+    def _set_panel_palette(self):
+        if isinstance(self.panel1, Panel):
+            self.panel1.palette_name = self.palette_name
+        if isinstance(self.panel2, Panel):
+            self.panel2.palette_name = self.palette_name
 
     def _draw(self, image):
         spacing = self.margin + self.padding
