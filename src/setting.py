@@ -50,4 +50,4 @@ class Setting:
 
         self.current_panel_index = (self.current_panel_index + 1) % self.schedule_length
 
-        return self.panels[panel_id], panel_duration
+        return panel_id, self.panels[panel_id], panel_duration

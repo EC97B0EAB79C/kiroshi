@@ -15,7 +15,7 @@ if __name__ == "__main__":
     PANEL_FILE_PATH = "example/setting.json"
     settings = Setting(PANEL_FILE_PATH)
 
-    current_panel_spec, duration = settings.get_next_panel()
+    _, current_panel_spec, duration = settings.get_next_panel()
 
     panel = load_panel(current_panel_spec)
     image = panel.draw()
