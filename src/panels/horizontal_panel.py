@@ -19,6 +19,7 @@ class HorizontalPanel(Panel):
         self.padding = settings.get("padding", 10)
 
         self.set_panels(panel1, panel2)
+        self._set_panel_palette()
 
     def set_panels(self, panel1: Panel = None, panel2: Panel = None):
         if isinstance(panel1, Panel):
@@ -45,6 +46,12 @@ class HorizontalPanel(Panel):
             self.panel1.set_size(target_width, target_height)
         if isinstance(self.panel2, Panel):
             self.panel2.set_size(target_width, target_height)
+
+    def _set_panel_palette(self):
+        if isinstance(self.panel1, Panel):
+            self.panel1.palette_name = self.palette_name
+        if isinstance(self.panel2, Panel):
+            self.panel2.palette_name = self.palette_name
 
     def _draw(self, image):
         spacing = self.margin + self.padding

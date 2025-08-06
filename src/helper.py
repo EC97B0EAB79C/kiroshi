@@ -1,5 +1,23 @@
+import json
+
 from PIL import Image, ImageDraw, ImageFont
 from src.palette import *
+
+
+def load_json(file_path):
+    try:
+        with open(file_path, "r") as file:
+            content = json.load(file)
+            return content
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON from {file_path}: {e}")
+        return {}
+    except Exception as e:
+        print(f"Unexpected error loading JSON from {file_path}: {e}")
+        return {}
 
 
 def load_font(font_path, font_size):

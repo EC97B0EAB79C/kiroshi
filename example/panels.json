@@ -1,8 +1,7 @@
 [
   {
+    "id": 0,
     "type": "four",
-    "width": 800,
-    "height": 480,
     "settings": {
       "padding": 0
     },
@@ -52,5 +51,12 @@
         }
       }
     ]
+  },
+  {
+    "id": 1,
+    "type": "picture",
+    "settings": {
+      "picture": "/home/c/Pictures/kv_pc.jpg"
+    }
   }
 ]

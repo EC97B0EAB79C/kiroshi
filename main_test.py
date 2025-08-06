@@ -1,27 +1,23 @@
 #!/usr/bin/python
 
+import sys
 import os
+import json
+
+from src.setting import Setting
+from src.panels.loader import load_panel
 
 
 DEBUG = False
 
 
-from src.panels.loader import load_panel
-
-import sys
-import os
-import json
-
 if __name__ == "__main__":
-    PANEL_FILE_PATH = "example/four_panel.json"
-    try:
-        with open(PANEL_FILE_PATH, "r") as f:
-            config = json.load(f)
-    except Exception as e:
-        print(f"Error loading panel configuration from {PANEL_FILE_PATH}: {e}")
-        sys.exit(1)
+    PANEL_FILE_PATH = "example/setting.json"
+    settings = Setting(PANEL_FILE_PATH)
 
-    panel = load_panel(config[0])
+    _, current_panel_spec, duration = settings.get_next_panel()
+
+    panel = load_panel(current_panel_spec)
     image = panel.draw()
 
     try:
