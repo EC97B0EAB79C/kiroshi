@@ -40,7 +40,7 @@ class Setting:
         if self.schedule_length == 0:
             raise ValueError("Schedule is empty")
 
-        #
+        # Initialize current panel index
         self.current_panel_index = 0
 
     def get_next_panel(self):
@@ -50,4 +50,12 @@ class Setting:
 
         self.current_panel_index = (self.current_panel_index + 1) % self.schedule_length
 
+        if (
+            not isinstance(panel_id, int)
+            or panel_id < 0
+            or panel_id >= len(self.panels)
+        ):
+            raise ValueError(
+                f"Invalid panel ID: {panel_id}. Must be an integer between 0 and {len(self.panels) - 1}."
+            )
         return panel_id, self.panels[panel_id], panel_duration
