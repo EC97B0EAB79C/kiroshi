@@ -4,6 +4,7 @@ import argparse
 import os
 import sys
 import json
+import logging
 from time import sleep
 
 
@@ -12,37 +13,45 @@ from src.panels.loader import load_panel
 
 
 DEBUG = False
-
 USE_EPD = False
-try:
-    picdir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "pic"
-    )
-    libdir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
-    )
-    if os.path.exists(libdir):
-        sys.path.append(libdir)
-
-    from waveshare_epd import epd7in3e
-
-    USE_EPD = True
-except Exception as e:
-    print(f"Error importing e-Paper library: {e}")
-    USE_EPD = False
 
 
 def set_panel(image):
     if USE_EPD:
+        logger.debug("Displaying image on e-Paper display")
         epd = epd7in3e.EPD()
         epd.init()
         epd.display(epd.getbuffer(image))
         epd.sleep()
+        logger.debug("Image displayed successfully on e-Paper display")
     else:
+        logger.debug("e-Paper display not available, saving image to file")
         image.save("test_image.png")
+        logger.debug("Image saved to test_image.png")
+
+
+def main(settings_file):
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting application")
+    settings = Setting(settings_file)
+    panels = {}
+
+    while True:
+        panel_id, current_panel_spec, duration = settings.get_next_panel()
+        logger.info(f"Displaying panel {panel_id} for {duration} minutes")
+        if panel_id not in panels:
+            panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
+
+        image = panels[panel_id].draw()
+
+        set_panel(image)
+
+        # sleep(duration * 60)
+        sleep(10)  # For testing, use a shorter duration
 
 
 if __name__ == "__main__":
+    # Parse command line arguments
     parser = argparse.ArgumentParser(description="Loader")
     parser.add_argument(
         "-s",
@@ -50,19 +59,38 @@ if __name__ == "__main__":
         type=str,
         default="example/setting.json",
     )
-
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Enable debug mode",
+    )
     args = parser.parse_args()
+    DEBUG = args.debug
 
-    settings = Setting(args.settings)
-    panels = {}
+    # Set logger
+    logging.basicConfig(
+        level=logging.DEBUG if DEBUG else logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    logger = logging.getLogger(__name__)
 
-    while True:
-        panel_id, current_panel_spec, duration = settings.get_next_panel()
-        if panel_id not in panels:
-            panels[panel_id] = load_panel(current_panel_spec)
+    # Configure EPD library
+    try:
+        libdir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
+        )
+        if os.path.exists(libdir):
+            sys.path.append(libdir)
 
-        image = panels[panel_id].draw()
+        from waveshare_epd import epd7in3e
 
-        set_panel(image)
+        logger.info("e-Paper library imported successfully.")
+        USE_EPD = True
+    except Exception as e:
+        logger.warning(f"Error importing e-Paper library: {e}")
+        USE_EPD = False
 
-        sleep(duration * 60)
+    # Main execution
+    main(args.settings)
