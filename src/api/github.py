@@ -1,12 +1,23 @@
+import logging
 import requests
 import os
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_github_contributions(username, token, year=None):
+    logger.debug(f"Fetching contributions for user: {username}")
     result = _graphql_query(username, token, year)
-    if result:
-        return result.get("contributionCalendar", {}).get("weeks", [])
-    return None
+
+    if result is None:
+        logger.debug(f"No contributions found for user: {username}")
+        return None
+
+    contributions = result.get("contributionCalendar", {}).get("weeks", [])
+    logger.debug(f"Contributions found: {len(contributions)} weeks")
+
+    return contributions
 
 
 def _graphql_query(username, token, year=None):
@@ -44,7 +55,10 @@ def _graphql_query(username, token, year=None):
     payload = {"query": query, "variables": variables}
 
     try:
+        logger.debug(f"> Sending GraphQL request: {payload}")
         response = requests.post(url, json=payload, headers=headers)
+        logger.debug(f"> Received response: {response.status_code}")
+
         response.raise_for_status()
         data = response.json()
         if data is None:

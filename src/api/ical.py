@@ -1,22 +1,36 @@
+import logging
 import requests
 from icalendar import Calendar
 from datetime import date, datetime, timedelta, time
 import os
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_events(ical_urls, use_cache=False):
+    logger.debug("Fetching events from iCal URLs")
+
+    # Load cached calendar if requested
     if use_cache:
+        logger.debug("> Loading cached calendar")
         cached_calendar = _load_cache()
         if cached_calendar:
+            logger.debug("> Cached calendar loaded successfully")
             return _extract_events(cached_calendar)
+        logger.debug("> No cached calendar found")
 
     if not isinstance(ical_urls, list):
         ical_urls = [ical_urls]
 
+    logger.debug(f"> Fetching events from {len(ical_urls)} iCal URLs")
     calendar = None
     for ical_url in ical_urls:
         try:
+            logger.debug(f"> Fetching events from iCal URL: {ical_url}")
             response = requests.get(ical_url)
+            logger.debug(f"> API response status code: {response.status_code}")
+
             response.raise_for_status()
             if calendar is None:
                 calendar = Calendar.from_ical(response.content)
@@ -26,12 +40,18 @@ def get_events(ical_urls, use_cache=False):
                     calendar.add_component(component)
 
         except Exception as e:
-            print(f"Error fetching {ical_url}: {e}")
+            logger.error(f"> Error fetching {ical_url}: {e}")
 
-    if use_cache and calendar:
+    if calendar is None:
+        return []
+
+    if use_cache:
         _save_cache(calendar)
 
-    return _extract_events(calendar) if calendar else []
+    events = _extract_events(calendar)
+    logger.debug(f"> Extracted {len(events)} events from calendar")
+
+    return events
 
 
 def _extract_events(calendar):
@@ -58,16 +78,20 @@ def _extract_events(calendar):
 
 # ----- Cache Management -----
 def _save_cache(calendar):
+    logger.debug("> Saving calendar cache to .cache/calendar_cache.ics")
     with open(".cache/calendar_cache.ics", "wb") as f:
         f.write(calendar.to_ical())
+        logger.debug("> Calendar cache saved successfully")
 
 
 def _load_cache():
     try:
+        logger.debug("> Loading calendar cache from .cache/calendar_cache.ics")
         os.makedirs(".cache", exist_ok=True)
         with open(".cache/calendar_cache.ics", "rb") as f:
             return Calendar.from_ical(f.read())
     except FileNotFoundError:
+        logger.error("> No calendar cache found")
         return None
 
 
