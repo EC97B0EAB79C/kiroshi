@@ -14,6 +14,7 @@ from src.panels.loader import load_panel
 
 DEBUG = False
 USE_EPD = False
+logger = None
 
 
 def set_panel(image):
@@ -31,7 +32,6 @@ def set_panel(image):
 
 
 def main(settings_file):
-    logger = logging.getLogger(__name__)
     logger.info(f"Starting application")
     settings = Setting(settings_file)
     panels = {}
@@ -46,8 +46,7 @@ def main(settings_file):
 
         set_panel(image)
 
-        # sleep(duration * 60)
-        sleep(10)  # For testing, use a shorter duration
+        sleep(duration * 60)
 
 
 if __name__ == "__main__":

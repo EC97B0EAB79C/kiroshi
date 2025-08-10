@@ -91,7 +91,7 @@ def _load_cache():
         with open(".cache/calendar_cache.ics", "rb") as f:
             return Calendar.from_ical(f.read())
     except FileNotFoundError:
-        logger.error("> No calendar cache found")
+        logger.info("> No calendar cache found")
         return None
 
 

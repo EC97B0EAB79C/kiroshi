@@ -55,7 +55,7 @@ def _graphql_query(username, token, year=None):
     payload = {"query": query, "variables": variables}
 
     try:
-        logger.debug(f"> Sending GraphQL request: {payload}")
+        logger.debug(f"> Sending GraphQL request to {url}")
         response = requests.post(url, json=payload, headers=headers)
         logger.debug(f"> Received response: {response.status_code}")
 
