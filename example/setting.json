@@ -3,10 +3,11 @@
     "width": 800,
     "height": 480,
     "palette": "6_colors",
+    "refresh": 30,
     "schedule": [
         {
             "id": 0,
-            "duration": 1
+            "duration": 2
         },
         {
             "id": 1,
