@@ -7,6 +7,7 @@ import json
 import logging
 from time import sleep
 
+from datetime import datetime, timezone, timedelta
 
 from src.setting import Setting
 from src.panels.loader import load_panel
@@ -17,14 +18,17 @@ USE_EPD = False
 logger = None
 
 
-def set_panel(image):
+def set_panel(image, FULL_REFRESH=True):
     if USE_EPD:
-        logger.debug("Displaying image on e-Paper display")
-        epd = epd7in3e.EPD()
-        epd.init()
-        epd.display(epd.getbuffer(image))
-        epd.sleep()
-        logger.debug("Image displayed successfully on e-Paper display")
+        if FULL_REFRESH:
+            logger.debug("Displaying image on e-Paper display")
+            epd = epd7in3e.EPD()
+            epd.init()
+            epd.display(epd.getbuffer(image))
+            epd.sleep()
+            logger.debug("Image displayed successfully on e-Paper display")
+        else:
+            logger.warning("Partial refresh not implemented")
     else:
         logger.debug("e-Paper display not available, saving image to file")
         image.save("test_image.png")
@@ -36,17 +40,23 @@ def main(settings_file):
     settings = Setting(settings_file)
     panels = {}
 
+    refresh_interval = settings.get_refresh_interval()
+    last_update = datetime.min
+    duration = 0
     while True:
-        panel_id, current_panel_spec, duration = settings.get_next_panel()
-        logger.info(f"Displaying panel {panel_id} for {duration} minutes")
+        FULL_REFRESH = False
+        if (datetime.now() - last_update).total_seconds() > duration * 60:
+            panel_id, current_panel_spec, duration = settings.get_next_panel()
+            logger.info(f"Displaying panel {panel_id} for {duration} minutes")
+            last_update = datetime.now()
+            FULL_REFRESH = True
+
         if panel_id not in panels:
             panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
 
         image = panels[panel_id].draw()
-
-        set_panel(image)
-
-        sleep(duration * 60)
+        set_panel(image, FULL_REFRESH=FULL_REFRESH)
+        sleep(refresh_interval)
 
 
 if __name__ == "__main__":
