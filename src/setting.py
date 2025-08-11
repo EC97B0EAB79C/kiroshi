@@ -66,3 +66,6 @@ class Setting:
                 f"Invalid panel ID: {panel_id}. Must be an integer between 0 and {len(self.panels) - 1}."
             )
         return panel_id, self.panels[panel_id], panel_duration
+
+    def get_refresh_interval(self):
+        return self.settings.get("refresh", 60)
