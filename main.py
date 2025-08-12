@@ -23,8 +23,10 @@ epd = None
 def signal_handler(sig, frame):
     global epd
     if USE_EPD and epd is not None:
+        if logger:
+            logger.info("Signal received, cleaning up e-Paper display")
         epd.init()
-        epd.clear()
+        epd.Clear()
     sys.exit(0)
 
 
@@ -32,6 +34,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 def set_panel(image, FULL_REFRESH=True):
+    global epd
     if USE_EPD:
         if not FULL_REFRESH:
             logger.warning("Partial refresh not implemented")
