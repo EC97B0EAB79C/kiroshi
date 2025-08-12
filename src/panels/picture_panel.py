@@ -1,7 +1,11 @@
+import logging
 from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
 import src.helper as Helper
+
+
+logger = logging.getLogger(__name__)
 
 
 class PicturePanel(Panel):
@@ -13,11 +17,14 @@ class PicturePanel(Panel):
             self.picture = None
 
     def set_picture(self, picture_path):
-        self.picture = Image.open(picture_path).convert("RGB")
+        try:
+            self.picture = Image.open(picture_path).convert("RGB")
+        except Exception as e:
+            logger.error(f"Error loading picture: {e}")
 
     def _draw(self, image):
         if not self.picture:
-            raise ValueError("Picture not set. Use set_picture() to set a picture.")
+            logger.warning("Picture not set.")
 
         draw = ImageDraw.Draw(image)
 
