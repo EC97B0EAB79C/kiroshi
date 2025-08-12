@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+import signal
 import json
 import logging
 from time import sleep
@@ -16,6 +17,17 @@ from src.panels.loader import load_panel
 DEBUG = False
 USE_EPD = False
 logger = None
+
+
+def signal_handler(sig, frame):
+    if USE_EPD:
+        epd = epd7in3e.EPD()
+        epd.init()
+        epd.clear()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 def set_panel(image, FULL_REFRESH=True):
@@ -43,20 +55,23 @@ def main(settings_file):
     refresh_interval = settings.get_refresh_interval()
     last_update = datetime.min
     duration = 0
-    while True:
-        FULL_REFRESH = False
-        if (datetime.now() - last_update).total_seconds() > duration * 60:
-            panel_id, current_panel_spec, duration = settings.get_next_panel()
-            logger.info(f"Displaying panel {panel_id} for {duration} minutes")
-            last_update = datetime.now()
-            FULL_REFRESH = True
+    try:
+        while True:
+            FULL_REFRESH = False
+            if (datetime.now() - last_update).total_seconds() > duration * 60:
+                panel_id, current_panel_spec, duration = settings.get_next_panel()
+                logger.info(f"Displaying panel {panel_id} for {duration} minutes")
+                last_update = datetime.now()
+                FULL_REFRESH = True
 
-        if panel_id not in panels:
-            panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
+            if panel_id not in panels:
+                panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
 
-        image = panels[panel_id].draw()
-        set_panel(image, FULL_REFRESH=FULL_REFRESH)
-        sleep(refresh_interval)
+            image = panels[panel_id].draw()
+            set_panel(image, FULL_REFRESH=FULL_REFRESH)
+            sleep(refresh_interval)
+    except KeyboardInterrupt:
+        logger.info("Exiting application")
 
 
 if __name__ == "__main__":
