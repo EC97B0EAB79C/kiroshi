@@ -17,11 +17,12 @@ from src.panels.loader import load_panel
 DEBUG = False
 USE_EPD = False
 logger = None
+epd = None
 
 
 def signal_handler(sig, frame):
-    if USE_EPD:
-        epd = epd7in3e.EPD()
+    global epd
+    if USE_EPD and epd is not None:
         epd.init()
         epd.clear()
     sys.exit(0)
@@ -55,27 +56,24 @@ def main(settings_file):
     refresh_interval = settings.get_refresh_interval()
     last_update = datetime.min
     duration = 0
-    try:
-        while True:
-            FULL_REFRESH = False
-            if (datetime.now() - last_update).total_seconds() > duration * 60:
-                panel_id, current_panel_spec, duration = settings.get_next_panel()
-                logger.info(f"Displaying panel {panel_id} for {duration} minutes")
-                last_update = datetime.now()
-                FULL_REFRESH = True
+    while True:
+        FULL_REFRESH = False
+        if (datetime.now() - last_update).total_seconds() > duration * 60:
+            panel_id, current_panel_spec, duration = settings.get_next_panel()
+            logger.info(f"Displaying panel {panel_id} for {duration} minutes")
+            last_update = datetime.now()
+            FULL_REFRESH = True
 
-            if panel_id not in panels:
-                panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
+        if panel_id not in panels:
+            panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
 
-            image = panels[panel_id].draw()
-            set_panel(image, FULL_REFRESH=FULL_REFRESH)
-            sleep(
-                refresh_interval
-                if current_panel_spec.get("refresh", False)
-                else duration * 60
-            )
-    except KeyboardInterrupt:
-        logger.info("Exiting application")
+        image = panels[panel_id].draw()
+        set_panel(image, FULL_REFRESH=FULL_REFRESH)
+        sleep(
+            refresh_interval
+            if current_panel_spec.get("refresh", False)
+            else duration * 60
+        )
 
 
 if __name__ == "__main__":
