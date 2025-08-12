@@ -25,6 +25,7 @@ class PicturePanel(Panel):
     def _draw(self, image):
         if not self.picture:
             logger.warning("Picture not set.")
+            return super()._draw(image)
 
         draw = ImageDraw.Draw(image)
 
