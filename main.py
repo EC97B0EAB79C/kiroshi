@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+import signal
 import json
 import logging
 from time import sleep
@@ -16,6 +17,18 @@ from src.panels.loader import load_panel
 DEBUG = False
 USE_EPD = False
 logger = None
+epd = None
+
+
+def signal_handler(sig, frame):
+    global epd
+    if USE_EPD and epd is not None:
+        epd.init()
+        epd.clear()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 def set_panel(image, FULL_REFRESH=True):
@@ -56,7 +69,11 @@ def main(settings_file):
 
         image = panels[panel_id].draw()
         set_panel(image, FULL_REFRESH=FULL_REFRESH)
-        sleep(refresh_interval)
+        sleep(
+            refresh_interval
+            if current_panel_spec.get("refresh", False)
+            else duration * 60
+        )
 
 
 if __name__ == "__main__":
