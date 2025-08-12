@@ -69,7 +69,11 @@ def main(settings_file):
 
             image = panels[panel_id].draw()
             set_panel(image, FULL_REFRESH=FULL_REFRESH)
-            sleep(refresh_interval)
+            sleep(
+                refresh_interval
+                if current_panel_spec.get("refresh", False)
+                else duration * 60
+            )
     except KeyboardInterrupt:
         logger.info("Exiting application")
 
