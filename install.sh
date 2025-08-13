@@ -10,8 +10,9 @@ NC='\033[0m'
 # --- Parameters ---
 # Project parameters
 GIT_REPO_URL="https://github.com/EC97B0EAB79C/kiroshi"
-PYTHON_SCRIPT="main.py"
 SERVICE_NAME="kiroshi"
+PYTHON_SCRIPT="main.py"
+PYTHON_SCRIPT_CLEAR="clear.py"
 
 # Path
 USER_HOME=$(eval echo "~$USER")
@@ -42,6 +43,7 @@ git clone "$GIT_REPO_URL" "$INSTALL_DIR"
 
 # --- Install dependencies ---
 pip install -r "$INSTALL_DIR/requirements.txt"
+#TODO Install waveshare_epd library
 
 
 # Create wrapper script
@@ -62,23 +64,6 @@ chmod +x "$WRAPPER_SCRIPT_PATH_START"
 chown "$USER:$USER" "$WRAPPER_SCRIPT_PATH_START"
 
 
-# cat <<EOF > "$WRAPPER_SCRIPT_PATH_STOP"
-# #!/bin/bash
-
-# set -e
-
-# cd "$INSTALL_DIR" || exit
-
-# git checkout main
-# git pull
-# pip install -r "$INSTALL_DIR/requirements.txt"
-
-# pkill -f "$INSTALL_DIR/$PYTHON_SCRIPT"
-# EOF
-
-# chmod +x "$WRAPPER_SCRIPT_PATH_STOP"
-# chown "$USER:$USER" "$WRAPPER_SCRIPT_PATH_STOP"
-
 # Create the systemd service file
 cat <<EOF > "$SERVICE_FILE"
 [Unit]
@@ -91,7 +76,7 @@ Group=$RUN_USER
 
 WorkingDirectory=$INSTALL_DIR
 ExecStart=$WRAPPER_SCRIPT_PATH_START
-# ExecStop=$WRAPPER_SCRIPT_PATH_STOP
+ExecStopPost=python3 "$INSTALL_DIR/$PYTHON_SCRIPT_CLEAR"
 
 Restart=always
 RestartSec=10
