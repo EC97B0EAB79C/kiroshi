@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+import signal
 import json
 import logging
 from time import sleep
@@ -16,11 +17,26 @@ from src.panels.loader import load_panel
 DEBUG = False
 USE_EPD = False
 logger = None
+epd = None
+
+
+def signal_handler(sig, frame):
+    global epd
+    if USE_EPD and epd is not None:
+        if logger:
+            logger.info("Signal received, cleaning up e-Paper display")
+        epd.init()
+        epd.Clear()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 def set_epd(name):
+    global epd
     if not USE_EPD:
-        return None
+        return
 
     # Configure EPD library
     try:
@@ -35,41 +51,41 @@ def set_epd(name):
         else:
             logger.warning(f"Unsupported e-Paper display: {name}")
             USE_EPD = False
-            return None
+            return
 
         epd = epd_lib.EPD()
 
         logger.info("e-Paper library imported successfully.")
         USE_EPD = True
-        return epd
+        return
     except Exception as e:
         logger.warning(f"Error importing e-Paper library: {e}")
         USE_EPD = False
 
 
-def set_panel(image, epd, FULL_REFRESH=True):
-    if USE_EPD and epd is not None:
-        if FULL_REFRESH:
-            logger.debug("Displaying image on e-Paper display")
-            epd.init()
-            epd.display(epd.getbuffer(image))
-            epd.sleep()
-            logger.debug("Image displayed successfully on e-Paper display")
-        else:
-            logger.warning("Partial refresh not implemented")
-    else:
+def set_panel(image, FULL_REFRESH=True):
+    global epd
+    if not USE_EPD or epd is None:
         logger.debug("e-Paper display not available, saving image to file")
         image.save("test_image.png")
         logger.debug("Image saved to test_image.png")
+
+    if FULL_REFRESH:
+        logger.debug("Displaying image on e-Paper display")
+        epd.init()
+        epd.display(epd.getbuffer(image))
+        epd.sleep()
+        logger.debug("Image displayed successfully on e-Paper display")
+    else:
+        logger.warning("Partial refresh not implemented")
 
 
 def main(settings_file):
     logger.info(f"Starting application")
     settings = Setting(settings_file)
-    epd = set_epd(settings.get_epd_name())
+    set_epd(settings.get_epd_name())
     panels = {}
 
-    refresh_interval = settings.get_refresh_interval()
     last_update = datetime.min
     duration = 0
     while True:
@@ -79,12 +95,16 @@ def main(settings_file):
             logger.info(f"Displaying panel {panel_id} for {duration} minutes")
             last_update = datetime.now()
             FULL_REFRESH = True
+            if current_panel_spec.get("refresh", False):
+                refresh_interval = settings.get_refresh_interval()
+            else:
+                refresh_interval = duration * 60
 
         if panel_id not in panels:
             panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
 
         image = panels[panel_id].draw()
-        set_panel(image, epd, FULL_REFRESH=FULL_REFRESH)
+        set_panel(image, FULL_REFRESH=FULL_REFRESH)
         sleep(refresh_interval)
 
 
