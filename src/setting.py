@@ -69,3 +69,6 @@ class Setting:
 
     def get_refresh_interval(self):
         return self.settings.get("refresh", 60)
+
+    def get_epd_name(self):
+        return self.settings.get("epd", "epd7in3e")

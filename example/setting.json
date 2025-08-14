@@ -1,7 +1,6 @@
 {
     "panel_spec": "example/panels.json",
-    "width": 800,
-    "height": 480,
+    "epd": "epd7in3e",
     "palette": "6_colors",
     "refresh": 30,
     "schedule": [

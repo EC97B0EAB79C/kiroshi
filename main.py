@@ -18,11 +18,39 @@ USE_EPD = False
 logger = None
 
 
-def set_panel(image, FULL_REFRESH=True):
-    if USE_EPD:
+def set_epd(name):
+    if not USE_EPD:
+        return None
+
+    # Configure EPD library
+    try:
+        libdir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
+        )
+        if os.path.exists(libdir):
+            sys.path.append(libdir)
+
+        if name == "epd7in3e":
+            from waveshare_epd import epd7in3e as epd_lib
+        else:
+            logger.warning(f"Unsupported e-Paper display: {name}")
+            USE_EPD = False
+            return None
+
+        epd = epd_lib.EPD()
+
+        logger.info("e-Paper library imported successfully.")
+        USE_EPD = True
+        return epd
+    except Exception as e:
+        logger.warning(f"Error importing e-Paper library: {e}")
+        USE_EPD = False
+
+
+def set_panel(image, epd, FULL_REFRESH=True):
+    if USE_EPD and epd is not None:
         if FULL_REFRESH:
             logger.debug("Displaying image on e-Paper display")
-            epd = epd7in3e.EPD()
             epd.init()
             epd.display(epd.getbuffer(image))
             epd.sleep()
@@ -38,6 +66,7 @@ def set_panel(image, FULL_REFRESH=True):
 def main(settings_file):
     logger.info(f"Starting application")
     settings = Setting(settings_file)
+    epd = set_epd(settings.get_epd_name())
     panels = {}
 
     refresh_interval = settings.get_refresh_interval()
@@ -55,7 +84,7 @@ def main(settings_file):
             panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
 
         image = panels[panel_id].draw()
-        set_panel(image, FULL_REFRESH=FULL_REFRESH)
+        set_panel(image, epd, FULL_REFRESH=FULL_REFRESH)
         sleep(refresh_interval)
 
 
@@ -84,22 +113,6 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     logger = logging.getLogger(__name__)
-
-    # Configure EPD library
-    try:
-        libdir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
-        )
-        if os.path.exists(libdir):
-            sys.path.append(libdir)
-
-        from waveshare_epd import epd7in3e
-
-        logger.info("e-Paper library imported successfully.")
-        USE_EPD = True
-    except Exception as e:
-        logger.warning(f"Error importing e-Paper library: {e}")
-        USE_EPD = False
 
     # Main execution
     main(args.settings)
