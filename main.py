@@ -34,15 +34,12 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 def set_epd(name):
-    global epd
-    if not USE_EPD:
-        return
+    global epd, USE_EPD, logger
 
     # Configure EPD library
     try:
-        libdir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"
-        )
+        libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
+        logger.debug(f"Adding library directory to sys.path: {libdir}")
         if os.path.exists(libdir):
             sys.path.append(libdir)
 
@@ -54,7 +51,7 @@ def set_epd(name):
         epd = epd_lib.EPD()
 
         logger.info("e-Paper library imported successfully.")
-        USE_EPD = True
+        USE_EPD = USE_EPD and True
         return
     except Exception as e:
         logger.warning(f"Error importing e-Paper library: {e}")
@@ -67,6 +64,7 @@ def set_panel(image, FULL_REFRESH=True):
         logger.debug("e-Paper display not available, saving image to file")
         image.save("test_image.png")
         logger.debug("Image saved to test_image.png")
+        return
 
     if FULL_REFRESH:
         logger.debug("Displaying image on e-Paper display")
@@ -79,9 +77,11 @@ def set_panel(image, FULL_REFRESH=True):
 
 
 def main(settings_file):
+    global epd
     logger.info(f"Starting application")
     settings = Setting(settings_file)
     set_epd(settings.get_epd_name())
+    settings.set_epd_settings(epd)
     panels = {}
 
     last_update = datetime.min
