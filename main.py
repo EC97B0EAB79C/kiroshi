@@ -49,9 +49,7 @@ def set_epd(name):
         if name == "epd7in3e":
             from waveshare_epd import epd7in3e as epd_lib
         else:
-            logger.warning(f"Unsupported e-Paper display: {name}")
-            USE_EPD = False
-            return
+            raise ValueError(f"Unsupported e-Paper display: {name}")
 
         epd = epd_lib.EPD()
 
