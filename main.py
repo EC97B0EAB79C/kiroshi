@@ -66,14 +66,17 @@ def set_panel(image, FULL_REFRESH=True):
         logger.debug("Image saved to test_image.png")
         return
 
-    if FULL_REFRESH:
-        logger.debug("Displaying image on e-Paper display")
-        epd.init()
-        epd.display(epd.getbuffer(image))
-        epd.sleep()
-        logger.debug("Image displayed successfully on e-Paper display")
-    else:
+    if not FULL_REFRESH:
         logger.warning("Partial refresh not implemented")
+        pass
+        # TODO
+        return
+
+    logger.debug("Displaying image on e-Paper display")
+    epd.init()
+    epd.display(epd.getbuffer(image))
+    epd.sleep()
+    logger.debug("Image displayed successfully on e-Paper display")
 
 
 def main(settings_file):
