@@ -22,22 +22,6 @@ class Setting:
             raise ValueError(f"Failed to load panels from {panel_spec}")
         logger.info(f"Loaded {len(self.panels)} panels from {panel_spec}")
 
-        # Set default values
-        if self.settings.get("width", 0) <= 0 or self.settings.get("height", 0) <= 0:
-            raise ValueError("Width or height is not set or invalid")
-        for panel in self.panels:
-            panel["width"] = self.settings.get("width", 0)
-            panel["height"] = self.settings.get("height", 0)
-
-        if "palette" not in self.settings:
-            raise ValueError("Palette not found in settings")
-        if self.settings["palette"] not in ["6_colors", "gray"]:
-            raise ValueError(
-                f"Invalid palette: {self.settings['palette']}. Expected '6_colors' or 'gray'."
-            )
-        for panel in self.panels:
-            panel["settings"]["palette"] = self.settings["palette"]
-
         # Load schedule
         self.schedule = self.settings.get("schedule", [])
         if not self.schedule:
@@ -49,6 +33,20 @@ class Setting:
 
         # Initialize current panel index
         self.current_panel_index = 0
+
+    def set_epd_settings(self, epd):
+        for panel in self.panels:
+            panel["width"] = epd.width
+            panel["height"] = epd.height
+
+        palette = ""
+        if self.get_epd_name() == "epd7in3e":
+            palette = "6_colors"
+        else:
+            raise ValueError(f"Unsupported e-Paper display: {self.get_epd_name()}")
+
+        for panel in self.panels:
+            panel["settings"]["palette"] = palette
 
     def get_next_panel(self):
         current_panel_spec = self.schedule[self.current_panel_index]
@@ -69,3 +67,6 @@ class Setting:
 
     def get_refresh_interval(self):
         return self.settings.get("refresh", 60)
+
+    def get_epd_name(self):
+        return self.settings.get("epd", "epd7in3e")
