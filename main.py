@@ -84,6 +84,7 @@ def main(settings_file):
     logger.info(f"Starting application")
     settings = Setting(settings_file)
     set_epd(settings.get_epd_name())
+    # TODO: mock epd settings
     settings.set_epd_settings(epd)
     panels = {}
 
