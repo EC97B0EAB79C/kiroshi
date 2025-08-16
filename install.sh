@@ -13,14 +13,14 @@ GIT_REPO_URL="https://github.com/EC97B0EAB79C/kiroshi"
 SERVICE_NAME="kiroshi"
 PYTHON_SCRIPT="main.py"
 PYTHON_SCRIPT_CLEAR="clear.py"
+RUN_USER="${SUDO_USER:-$USER}"
 
 # Path
-USER_HOME=$(eval echo "~$USER")
+USER_HOME=$(eval echo "~$RUN_USER")
 LOCAL_BIN="$USER_HOME/.local/bin"
 INSTALL_DIR="$LOCAL_BIN/$SERVICE_NAME"
 SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
 WRAPPER_SCRIPT_PATH_START="$INSTALL_DIR/start.sh"
-WRAPPER_SCRIPT_PATH_STOP="$INSTALL_DIR/stop.sh"
 
 # --- Pre-check ---
 # Check if the script is run with sudo privileges
@@ -37,16 +37,19 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 # --- Clone repository ---
+if [ -d "$INSTALL_DIR/.git" ]; then
+  echo -e "${YELLOW}Removing existing installation...${NC}"
+  rm -rf "$INSTALL_DIR"
+fi
 mkdir -p "$INSTALL_DIR"
 git clone "$GIT_REPO_URL" "$INSTALL_DIR"
 
 
 # --- Install dependencies ---
-pip install -r "$INSTALL_DIR/requirements.txt"
-#TODO Install waveshare_epd library
+pip install -r "$INSTALL_DIR/requirements.txt" --break-system-packages
 
 
-# Create wrapper script
+# --- Create wrapper script ---
 cat <<EOF > "$WRAPPER_SCRIPT_PATH_START"
 #!/bin/bash
 set -e
@@ -61,7 +64,7 @@ python3 "$INSTALL_DIR/$PYTHON_SCRIPT"
 EOF
 
 chmod +x "$WRAPPER_SCRIPT_PATH_START"
-chown "$USER:$USER" "$WRAPPER_SCRIPT_PATH_START"
+chown "$RUN_USER:$RUN_USER" "$WRAPPER_SCRIPT_PATH_START"
 
 
 # Create the systemd service file
