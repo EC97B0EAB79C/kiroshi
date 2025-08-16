@@ -1,6 +1,7 @@
 import logging
 
 from src.helper import load_json
+from src.palette import EPD_PALETTE_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +40,10 @@ class Setting:
             panel["width"] = epd.width
             panel["height"] = epd.height
 
-        palette = ""
-        if self.get_epd_name() == "epd7in3e":
-            palette = "6_colors"
-        else:
-            raise ValueError(f"Unsupported e-Paper display: {self.get_epd_name()}")
+        epd_name = self.get_epd_name()
+        palette = EPD_PALETTE_MAP.get(epd_name, None)
+        if palette is None:
+            raise ValueError(f"Unsupported e-Paper display: {epd_name}")
 
         for panel in self.panels:
             panel["settings"]["palette"] = palette
