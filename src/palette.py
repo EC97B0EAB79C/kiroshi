@@ -1,5 +1,6 @@
 EPD_PALETTE_MAP = {
     "epd7in3e": "6_colors",
+    "mock": "6_colors",
 }
 
 

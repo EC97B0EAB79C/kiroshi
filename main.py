@@ -15,14 +15,13 @@ from src.panels.loader import load_panel
 
 
 DEBUG = False
-USE_EPD = False
 logger = None
 epd = None
 
 
 def signal_handler(sig, frame):
     global epd
-    if USE_EPD and epd is not None:
+    if epd is not None:
         if logger:
             logger.info("Signal received, cleaning up e-Paper display")
         epd.init()
@@ -46,7 +45,9 @@ def set_epd(name):
         if name == "epd7in3e":
             from waveshare_epd import epd7in3e as epd_lib
         else:
-            raise ValueError(f"Unsupported e-Paper display: {name}")
+            logger.warning(f"Unsupported e-Paper display name: {name}")
+            logger.warning("Using mock e-Paper display instead.")
+            from waveshare_epd import mock as epd_lib
 
         epd = epd_lib.EPD()
 
@@ -60,11 +61,6 @@ def set_epd(name):
 
 def set_panel(image, FULL_REFRESH=True):
     global epd
-    if not USE_EPD or epd is None:
-        logger.debug("e-Paper display not available, saving image to file")
-        image.save("test_image.png")
-        logger.debug("Image saved to test_image.png")
-        return
 
     if not FULL_REFRESH:
         logger.warning("Partial refresh not implemented")
@@ -84,7 +80,6 @@ def main(settings_file):
     logger.info(f"Starting application")
     settings = Setting(settings_file)
     set_epd(settings.get_epd_name())
-    # TODO: mock epd settings
     settings.set_epd_settings(epd)
     panels = {}
 
