@@ -33,7 +33,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 def set_epd(name):
-    global epd, USE_EPD, logger
+    global epd, logger
 
     # Configure EPD library
     try:
@@ -52,11 +52,10 @@ def set_epd(name):
         epd = epd_lib.EPD()
 
         logger.info("e-Paper library imported successfully.")
-        USE_EPD = USE_EPD and True
         return
     except Exception as e:
-        logger.warning(f"Error importing e-Paper library: {e}")
-        USE_EPD = False
+        logger.error(f"Error importing e-Paper library: {e}")
+        raise RuntimeError("Failed to import e-Paper library")
 
 
 def set_panel(image, FULL_REFRESH=True):
