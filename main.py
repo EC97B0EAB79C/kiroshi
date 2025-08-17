@@ -63,9 +63,8 @@ def set_panel(image, FULL_REFRESH=True):
 
     if not FULL_REFRESH:
         logger.warning("Partial refresh not implemented")
-        pass
         # TODO
-        return
+        # return
 
     logger.debug("Displaying image on e-Paper display")
     epd.init()
