@@ -1,3 +1,9 @@
+EPD_PALETTE_MAP = {
+    "epd7in3e": "6_colors",
+    "mock": "6_colors",
+}
+
+
 PALETTE_RED = 0x0000FF
 PALETTE_GREEN = 0x00FF00
 PALETTE_BLUE = 0xFF0000
