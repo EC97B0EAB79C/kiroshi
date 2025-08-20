@@ -59,7 +59,6 @@ cd "$INSTALL_DIR" || exit
 
 git checkout main
 git pull
-pip install -r "$INSTALL_DIR/requirements.txt"
 
 python3 "$INSTALL_DIR/$PYTHON_SCRIPT"
 EOF
