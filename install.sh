@@ -43,7 +43,8 @@ if [ -d "$INSTALL_DIR/.git" ]; then
 fi
 mkdir -p "$INSTALL_DIR"
 git clone "$GIT_REPO_URL" "$INSTALL_DIR"
-
+git config --global --add safe.directory "$INSTALL_DIR"
+chown -R "$RUN_USER:$RUN_USER" "$INSTALL_DIR"
 
 # --- Install dependencies ---
 pip install -r "$INSTALL_DIR/requirements.txt" --break-system-packages
