@@ -12,8 +12,7 @@ class Setting:
         logger.debug(f"Loading settings from {settings_file}")
         self.settings_file = settings_file
         self.settings = load_json(self.settings_file)
-        if not self.settings:
-            raise ValueError(f"Failed to load settings from {self.settings_file}")
+        self._verify_settings()
 
         # Load panels
         panel_spec = self.settings.get("panel_spec", "example/panels.json")
@@ -35,6 +34,29 @@ class Setting:
         # Initialize current panel index
         self.current_panel_index = 0
 
+        # Verify
+        self._verify_panels()
+
+    def _verify_settings(self):
+        if not self.settings:
+            raise ValueError(f"Failed to load settings from {self.settings_file}")
+
+    def _verify_panels(self):
+        if not self.panels:
+            raise ValueError(f"Failed to load panels")
+        logger.info(f"Loaded {len(self.panels)} panels")
+
+        for s in self.schedule:
+            panel_id = s.get("id", 0)
+            if (
+                not isinstance(panel_id, int)
+                or panel_id < 0
+                or panel_id >= len(self.panels)
+            ):
+                raise ValueError(
+                    f"Invalid panel ID: {panel_id}. Must be an integer between 0 and {len(self.panels) - 1}."
+                )
+
     def set_epd_settings(self, epd):
         for panel in self.panels:
             panel["width"] = epd.width
@@ -55,14 +77,6 @@ class Setting:
 
         self.current_panel_index = (self.current_panel_index + 1) % self.schedule_length
 
-        if (
-            not isinstance(panel_id, int)
-            or panel_id < 0
-            or panel_id >= len(self.panels)
-        ):
-            raise ValueError(
-                f"Invalid panel ID: {panel_id}. Must be an integer between 0 and {len(self.panels) - 1}."
-            )
         return panel_id, self.panels[panel_id], panel_duration
 
     def get_refresh_interval(self):
