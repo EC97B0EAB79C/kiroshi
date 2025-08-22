@@ -79,7 +79,7 @@ class Setting:
 
         current_panel_spec = self.schedule[self.current_panel_index]
         panel_id = current_panel_spec.get("id", 0)
-        panel_duration = current_panel_spec.get("duration", 5)
+        panel_duration = self.get_panel_duration(current_panel_spec)
 
         self.current_panel_index = (self.current_panel_index + 1) % self.schedule_length
 
@@ -89,22 +89,38 @@ class Setting:
         return self.settings.get("refresh", 60)
 
     def get_epd_name(self):
-        return self.settings.get("epd", "epd7in3e")
+        return self.settings.get("epd", "mock")
+
+    def get_panel_duration(self, current_panel_spec):
+        duration = current_panel_spec.get("duration", 5)
+
+        if not self.bedtime:
+            return duration
+
+        return min(duration, self.get_time_to_bedtime().total_seconds() // 60)
+
+    def get_time_to_bedtime(self):
+        now = datetime.now()
+        start_time = datetime.strptime(self.bedtime["start"], "%H:%M").time()
+
+        if now.time() < start_time:
+            return datetime.combine(now.date(), start_time) - now
+        else:
+            return datetime.combine(now.date() + timedelta(days=1), start_time) - now
 
     def get_bedtime_duration(self):
         now = datetime.now()
         end_time = datetime.strptime(self.bedtime["end"], "%H:%M").time()
 
         if now.time() < end_time:
-            bedtime_duration = datetime.combine(now.date(), end_time) - now
+            return datetime.combine(now.date(), end_time) - now
         else:
-            bedtime_duration = (
-                datetime.combine(now.date() + timedelta(days=1), end_time) - now
-            )
-
-        return bedtime_duration
+            return datetime.combine(now.date() + timedelta(days=1), end_time) - now
 
     def is_bedtime(self):
+        if not self.bedtime:
+            return False
+
         now = datetime.now()
         start_time = datetime.strptime(self.bedtime["start"], "%H:%M").time()
         end_time = datetime.strptime(self.bedtime["end"], "%H:%M").time()
