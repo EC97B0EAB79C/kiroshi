@@ -101,26 +101,14 @@ class Setting:
         return min(duration, self.get_time_to_bedtime())
 
     def get_time_to_bedtime(self):
-        now = datetime.now()
-        start_time = datetime.strptime(self.bedtime["start"], "%H:%M").time()
-
-        if now.time() < start_time:
-            duration = datetime.combine(now.date(), start_time) - now
-        else:
-            duration = (
-                datetime.combine(now.date() + timedelta(days=1), start_time) - now
-            )
+        start_time = self._parse_time(self.bedtime["start"])
+        duration = self._calculate_duration(start_time)
 
         return duration.total_seconds()
 
     def get_bedtime_duration(self):
-        now = datetime.now()
-        end_time = datetime.strptime(self.bedtime["end"], "%H:%M").time()
-
-        if now.time() < end_time:
-            duration = datetime.combine(now.date(), end_time) - now
-        else:
-            duration = datetime.combine(now.date() + timedelta(days=1), end_time) - now
+        end_time = self._parse_time(self.bedtime["end"])
+        duration = self._calculate_duration(end_time)
 
         return duration.total_seconds()
 
@@ -129,10 +117,28 @@ class Setting:
             return False
 
         now = datetime.now()
-        start_time = datetime.strptime(self.bedtime["start"], "%H:%M").time()
-        end_time = datetime.strptime(self.bedtime["end"], "%H:%M").time()
+        start_time = self._parse_time(self.bedtime["start"])
+        end_time = self._parse_time(self.bedtime["end"])
 
         if start_time < end_time:
             return start_time <= now.time() < end_time
         else:
             return now.time() >= start_time or now.time() < end_time
+
+    def _parse_time(self, time_str):
+        try:
+            return datetime.strptime(time_str, "%H:%M").time()
+        except ValueError:
+            logger.error(f"Invalid time format: {time_str}. Expected format is HH:MM.")
+            return None
+
+    def _calculate_duration(self, time):
+        now = datetime.now()
+        target_time = datetime.combine(now.date(), time)
+
+        if target_time < now:
+            target_time += timedelta(days=1)
+
+        duration = target_time - now
+
+        return duration.total_seconds()
