@@ -73,6 +73,7 @@ class Setting:
 
     def get_next_panel(self):
         if self.is_bedtime():
+            logger.info("Starting bedtime mode")
             bedtime_panel = self.bedtime.get("id", 0)
             panel_duration = self.get_bedtime_duration()
             return bedtime_panel, self.panels[bedtime_panel], panel_duration
@@ -92,30 +93,36 @@ class Setting:
         return self.settings.get("epd", "mock")
 
     def get_panel_duration(self, current_panel_spec):
-        duration = current_panel_spec.get("duration", 5)
+        duration = current_panel_spec.get("duration", 5) * 60
 
         if not self.bedtime:
             return duration
 
-        return min(duration, self.get_time_to_bedtime().total_seconds() // 60)
+        return min(duration, self.get_time_to_bedtime())
 
     def get_time_to_bedtime(self):
         now = datetime.now()
         start_time = datetime.strptime(self.bedtime["start"], "%H:%M").time()
 
         if now.time() < start_time:
-            return datetime.combine(now.date(), start_time) - now
+            duration = datetime.combine(now.date(), start_time) - now
         else:
-            return datetime.combine(now.date() + timedelta(days=1), start_time) - now
+            duration = (
+                datetime.combine(now.date() + timedelta(days=1), start_time) - now
+            )
+
+        return duration.total_seconds()
 
     def get_bedtime_duration(self):
         now = datetime.now()
         end_time = datetime.strptime(self.bedtime["end"], "%H:%M").time()
 
         if now.time() < end_time:
-            return datetime.combine(now.date(), end_time) - now
+            duration = datetime.combine(now.date(), end_time) - now
         else:
-            return datetime.combine(now.date() + timedelta(days=1), end_time) - now
+            duration = datetime.combine(now.date() + timedelta(days=1), end_time) - now
+
+        return duration.total_seconds()
 
     def is_bedtime(self):
         if not self.bedtime:
