@@ -104,13 +104,13 @@ class Setting:
         start_time = self._parse_time(self.bedtime["start"])
         duration = self._calculate_duration(start_time)
 
-        return duration.total_seconds()
+        return duration
 
     def get_bedtime_duration(self):
         end_time = self._parse_time(self.bedtime["end"])
         duration = self._calculate_duration(end_time)
 
-        return duration.total_seconds()
+        return duration
 
     def is_bedtime(self):
         if not self.bedtime:
