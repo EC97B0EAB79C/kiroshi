@@ -1,5 +1,3 @@
-from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
 
 from src.panels.time_panel import TimePanel
 from src.panels.picture_panel import PicturePanel
