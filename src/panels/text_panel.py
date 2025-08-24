@@ -15,6 +15,7 @@ class TextPanel(Panel):
         self.font_size = settings.get("font_size", 24)
         self.font_color = settings.get("font_color", "black")
         self.align = settings.get("align", "center")
+        self.location = settings.get("location", "center")
 
         # Margin, padding and border settings
         self.padding = settings.get("padding", 10)
@@ -39,7 +40,11 @@ class TextPanel(Panel):
             (0, 0), self.draw_text, font=font, align=self.align
         )
         self.position = Helper.position(
-            self.bbox, self.width, self.height, self.spacing
+            self.bbox,
+            self.width,
+            self.height,
+            self.spacing,
+            location=self.location,
         )
         self.position = (
             self.position[0] - self.bbox[0],
