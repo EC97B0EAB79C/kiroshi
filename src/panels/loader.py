@@ -10,6 +10,7 @@ from src.panels.picture_panel import PicturePanel
 from src.panels.toggl_panel import TogglPanel
 from src.panels.calendar_panel import CalendarPanel
 from src.panels.github_panel import GithubPanel
+from src.panels.picture_time_panel import PictureTimePanel
 
 
 def load_panel(panel_spec, DEBUG=False) -> Panel:
@@ -58,6 +59,7 @@ def load_panel(panel_spec, DEBUG=False) -> Panel:
         "picture": PicturePanel,
         "calendar": CalendarPanel,
         "github": GithubPanel,
+        "picture_time": PictureTimePanel,
     }
 
     panel_type = panel_spec["type"]

@@ -29,11 +29,15 @@ def load_font(font_path, font_size):
         return ImageFont.load_default(size=font_size)
 
 
-def position(bbox, width, height, spacing=0):
+def position(bbox, width, height, spacing=0, location="center"):
     content_width = bbox[2] - bbox[0]
     content_height = bbox[3] - bbox[1]
     x = ((width - spacing * 2) - content_width) // 2 + spacing
     y = ((height - spacing * 2) - content_height) // 2 + spacing
+    if location == "top":
+        y = spacing
+    elif location == "bottom":
+        y = height - content_height - spacing
     return (x, y)
 
 
