@@ -16,6 +16,7 @@ class TextPanel(Panel):
         self.font_color = settings.get("font_color", "black")
         self.align = settings.get("align", "center")
         self.location = settings.get("location", "center")
+        self.background_color = settings.get("background_color", None)
 
         # Margin, padding and border settings
         self.padding = settings.get("padding", 10)
@@ -54,6 +55,21 @@ class TextPanel(Panel):
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
         font = Helper.load_font(self.font, self.font_size)
+
+        if self.background_color:
+            draw.rectangle(
+                [
+                    (
+                        self.position[0] + self.bbox[0] - self.padding,
+                        self.position[1] + self.bbox[1] - self.padding,
+                    ),
+                    (
+                        self.position[0] + self.bbox[2] + self.padding,
+                        self.position[1] + self.bbox[3] + self.padding,
+                    ),
+                ],
+                fill=self.background_color,
+            )
 
         draw.text(
             self.position,
