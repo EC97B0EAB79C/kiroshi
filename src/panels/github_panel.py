@@ -22,7 +22,8 @@ class GithubPanel(Panel):
         self.github_token = settings.get("github_token", GITHUB_TOKEN)
 
         # Margin, padding and border settings
-        self.padding = settings.get("padding", Default.PADDING_CONTENT)
+        self.padding = settings.get("padding", Default.PADDING)
+        self.padding_content = settings.get("padding_content", Default.PADDING_CONTENT)
 
         # Request settings
         self.request_interval = settings.get("request_interval", 0)
@@ -68,7 +69,7 @@ class GithubPanel(Panel):
     def _draw_graph(self, image, contributions, graph_location, graph_size):
         draw = ImageDraw.Draw(image)
 
-        box_size = (graph_size[1] - self.padding * 6) // 7
+        box_size = (graph_size[1] - self.padding_content * 6) // 7
 
         box_location = (graph_location[0] + graph_size[0] - box_size, graph_location[1])
         for week_contribution in reversed(contributions):
@@ -84,10 +85,10 @@ class GithubPanel(Panel):
                 )
                 box_location = (
                     box_location[0],
-                    box_location[1] + box_size + self.padding,
+                    box_location[1] + box_size + self.padding_content,
                 )
             box_location = (
-                box_location[0] - box_size - self.padding,
+                box_location[0] - box_size - self.padding_content,
                 graph_location[1],
             )
             if box_location[0] < graph_location[0] - box_size:
