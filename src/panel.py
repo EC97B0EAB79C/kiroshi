@@ -1,5 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 
+import src.default as Default
+
 
 class Panel:
     def __init__(self, width=800, height=480, settings={}, Debug=False):
@@ -9,9 +11,9 @@ class Panel:
         self.DEBUG = Debug
 
         # Margin, padding and border settings
-        self.margin = settings.get("margin", 10)
-        self.border_color = settings.get("border_color", "black")
-        self.border_width = settings.get("border_width", 2)
+        self.margin = settings.get("margin", Default.MARGIN)
+        self.border_color = settings.get("border_color", Default.BORDER_COLOR)
+        self.border_width = settings.get("border_width", Default.BORDER_WIDTH)
 
         # Quantization settings
         self.palette_name = settings.get("palette", "6_colors")
@@ -21,7 +23,7 @@ class Panel:
         self.height = height
 
     def draw(self):
-        image = Image.new("RGB", (self.width, self.height), "white")
+        image = Image.new("RGB", (self.width, self.height), Default.BACKGROUND_COLOR)
         image = self._draw(image)
         image = self._draw_border(image)
         if self.DEBUG:

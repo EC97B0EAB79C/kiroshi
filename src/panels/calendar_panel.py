@@ -4,10 +4,9 @@ from datetime import date, datetime, timedelta, time
 from src.panel import Panel
 import src.helper as Helper
 from src.palette import *
+import src.default as Default
 
 import src.api.ical as IcalAPI
-
-DEFAULT_FONT = "fonts/noto_sans_with_emoji/NotoSansWithEmoji-Scaled.ttf"
 
 
 class CalendarPanel(Panel):
@@ -15,15 +14,15 @@ class CalendarPanel(Panel):
         super().__init__(width, height, settings, DEBUG)
 
         # Text settings
-        self.font = settings.get("font", DEFAULT_FONT)
-        self.font_size = settings.get("font_size", 10)
+        self.font = settings.get("font", Default.FONT_EMOJI)
+        self.font_size = settings.get("font_size", Default.FONT_SIZE["p"])
 
         # Calendar settings
         self.ical_urls = settings.get("ical_urls")
 
         # Margin, padding and border settings
-        self.padding = settings.get("padding", 10)
-        self.entry_padding = settings.get("entry_padding", 5)
+        self.padding = settings.get("padding", Default.PADDING)
+        self.entry_padding = settings.get("entry_padding", Default.PADDING_CONTENT)
 
         # Request settings
         self.request_interval = settings.get("request_interval", 0)

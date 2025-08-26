@@ -2,6 +2,7 @@ import logging
 
 from src.helper import load_json
 from src.palette import EPD_PALETTE_MAP
+import src.default as Default
 
 from datetime import datetime, timezone, timedelta
 
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Setting:
-    def __init__(self, settings_file="example/setting.json"):
+    def __init__(self, settings_file=Default.SETTINGS_FILE):
         # Load JSON files
         logger.debug(f"Loading settings from {settings_file}")
         self.settings_file = settings_file
@@ -17,7 +18,7 @@ class Setting:
         self._verify_settings()
 
         # Load panels
-        panel_spec = self.settings.get("panel_spec", "example/panels.json")
+        panel_spec = self.settings.get("panel_spec", Default.PANEL_SPEC_FILE)
         logger.debug(f"Loading panels from {panel_spec}")
         self.panels = load_json(panel_spec)
 
@@ -87,13 +88,13 @@ class Setting:
         return panel_id, self.panels[panel_id], panel_duration
 
     def get_refresh_interval(self):
-        return self.settings.get("refresh", 60)
+        return self.settings.get("refresh", Default.DURATION_REFRESH)
 
     def get_epd_name(self):
         return self.settings.get("epd", "mock")
 
     def get_panel_duration(self, current_panel_spec):
-        duration = current_panel_spec.get("duration", 5) * 60
+        duration = current_panel_spec.get("duration", Default.DURATION_PANEL) * 60
 
         if not self.bedtime:
             return duration
