@@ -2,8 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
 import src.helper as Helper
-
-DEFAULT_FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
+import src.default as Default
 
 
 class TextPanel(Panel):
@@ -11,16 +10,16 @@ class TextPanel(Panel):
         super().__init__(width, height, settings, DEBUG)
 
         # Text settings
-        self.font = settings.get("font", DEFAULT_FONT)
-        self.font_size = settings.get("font_size", 24)
-        self.font_color = settings.get("font_color", "black")
+        self.font = settings.get("font", Default.FONT)
+        self.font_size = settings.get("font_size", Default.FONT_SIZE["H2"])
+        self.font_color = settings.get("font_color", Default.FONT_COLOR)
         self.align = settings.get("align", "center")
         self.location = settings.get("location", "center")
-        self.outline_color = settings.get("outline_color", None)
-        self.outline_size = settings.get("outline_size", 2)
+        self.outline_color = settings.get("outline_color", Default.OUTLINE_COLOR)
+        self.outline_size = settings.get("outline_size", Default.OUTLINE_SIZE)
 
         # Margin, padding and border settings
-        self.padding = settings.get("padding", 10)
+        self.padding = settings.get("padding", Default.PADDING)
 
         # Initialize text and position
         self.update_text(settings.get("text", ""))

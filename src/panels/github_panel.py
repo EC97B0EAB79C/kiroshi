@@ -6,6 +6,7 @@ from datetime import datetime, timezone, timedelta
 from src.panel import Panel
 import src.helper as Helper
 from src.palette import *
+import src.default as Default
 
 import src.api.github as GithubAPI
 
@@ -16,16 +17,12 @@ class GithubPanel(Panel):
     def __init__(self, width, height, settings, DEBUG=False):
         super().__init__(width, height, settings, DEBUG)
 
-        # Text settings
-        self.font = settings.get("font")
-        self.font_size = settings.get("font_size", 10)
-
         # GitHub API settings
         self.username = settings.get("username")
         self.github_token = settings.get("github_token", GITHUB_TOKEN)
 
         # Margin, padding and border settings
-        self.padding = settings.get("padding", 5)
+        self.padding = settings.get("padding", Default.PADDING_CONTENT)
 
         # Request settings
         self.request_interval = settings.get("request_interval", 0)

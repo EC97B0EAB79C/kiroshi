@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 
 from src.panel import Panel
+import src.default as Default
 
 
 class FourPanel(Panel):
@@ -18,7 +19,7 @@ class FourPanel(Panel):
         super().__init__(width, height, settings, DEBUG)
 
         # Margin, padding and border settings
-        self.padding = settings.get("padding", 10)
+        self.padding = settings.get("padding", Default.PADDING)
 
         self.set_panels(panel1, panel2, panel3, panel4)
 
