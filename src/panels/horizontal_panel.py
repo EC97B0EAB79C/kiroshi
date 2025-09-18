@@ -22,6 +22,13 @@ class HorizontalPanel(Panel):
         self.set_panels(panel1, panel2)
         self._set_panel_palette()
 
+    def needs_refresh(self):
+        return (
+            super().needs_refresh()
+            or (isinstance(self.panel1, Panel) and self.panel1.needs_refresh())
+            or (isinstance(self.panel2, Panel) and self.panel2.needs_refresh())
+        )
+
     def set_panels(self, panel1: Panel = None, panel2: Panel = None):
         if isinstance(panel1, Panel):
             self.panel1 = panel1

@@ -15,11 +15,22 @@ class PicturePanel(Panel):
         if settings and "picture" in settings:
             self.set_picture(settings["picture"])
 
+        # Refresh settings
+        self.refresh = True
+
+    def needs_refresh(self):
+        current = self.refresh or super().needs_refresh()
+        self.refresh = False
+
+        return current
+
     def set_picture(self, picture_path):
         try:
             self.picture = Image.open(picture_path).convert("RGB")
         except Exception as e:
             logger.error(f"Error loading picture: {e}")
+
+        self.refresh = True
 
     def _draw(self, image):
         if not self.picture:

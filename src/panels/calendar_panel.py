@@ -29,6 +29,15 @@ class CalendarPanel(Panel):
         self.request_recent = datetime.min
         self.cache = None
 
+        # Refresh settings
+        self.refresh = True
+
+    def needs_refresh(self):
+        current = self.refresh or super().needs_refresh()
+        self.refresh = False
+
+        return current
+
     def _request(self):
         if (self.cache is not None) and (
             datetime.now() - self.request_recent
@@ -37,6 +46,9 @@ class CalendarPanel(Panel):
             return self.cache
 
         events = IcalAPI.get_events(self.ical_urls)
+        if self.cache != events:
+            self.refresh = True
+
         self.cache = events
         self.request_recent = datetime.now()
 

@@ -10,6 +10,8 @@ from time import sleep
 
 from datetime import datetime, timezone, timedelta
 
+from src.helper import compare_images
+
 from src.setting import Setting
 from src.panels.loader import load_panel
 
@@ -82,6 +84,7 @@ def main(settings_file):
     panels = {}
 
     last_update = datetime.min
+    previous_image = None
     duration = 0
     while True:
         FULL_REFRESH = False
@@ -100,7 +103,11 @@ def main(settings_file):
             panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
 
         image = panels[panel_id].draw()
-        set_panel(image, FULL_REFRESH=FULL_REFRESH)
+        if panels[panel_id].needs_refresh():
+            set_panel(image, FULL_REFRESH=FULL_REFRESH)
+        else:
+            logger.debug("Image unchanged, skipping update")
+
         sleep(refresh_interval)
 
 

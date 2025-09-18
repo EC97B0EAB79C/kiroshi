@@ -18,6 +18,15 @@ class Panel:
         # Quantization settings
         self.palette_name = settings.get("palette", "6_colors")
 
+        # Refresh settings
+        self.refresh = True
+
+    def needs_refresh(self):
+        current = self.refresh
+        self.refresh = False
+
+        return current
+
     def set_size(self, width, height):
         self.width = width
         self.height = height
