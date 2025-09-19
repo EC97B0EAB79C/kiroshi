@@ -36,8 +36,17 @@ class TogglPanel(Panel):
         self.request_recent = datetime.min
         self.cache = None
 
+        # Refresh settings
+        self.refresh = True
+
         # Debug settings
         self.debug_boxes = []
+
+    def needs_refresh(self):
+        current = self.refresh or super().needs_refresh()
+        self.refresh = False
+
+        return current
 
     def set_size(self, width, height):
         super().set_size(width, height)
@@ -53,6 +62,9 @@ class TogglPanel(Panel):
         time_entries = TogglAPI.get_time_entries(
             self.auth, (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         )
+        if self.cache != time_entries:
+            self.refresh = True
+
         self.cache = time_entries
         self.request_recent = datetime.now()
 

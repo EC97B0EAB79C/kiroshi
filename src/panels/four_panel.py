@@ -23,6 +23,23 @@ class FourPanel(Panel):
 
         self.set_panels(panel1, panel2, panel3, panel4)
 
+    def needs_refresh(self):
+        current = super().needs_refresh()
+        current = (
+            isinstance(self.panel1, Panel) and self.panel1.needs_refresh()
+        ) or current
+        current = (
+            isinstance(self.panel2, Panel) and self.panel2.needs_refresh()
+        ) or current
+        current = (
+            isinstance(self.panel3, Panel) and self.panel3.needs_refresh()
+        ) or current
+        current = (
+            isinstance(self.panel4, Panel) and self.panel4.needs_refresh()
+        ) or current
+
+        return current
+
     def set_panels(
         self,
         panel1: Panel = None,

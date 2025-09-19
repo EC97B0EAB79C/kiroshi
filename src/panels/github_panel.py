@@ -30,6 +30,15 @@ class GithubPanel(Panel):
         self.request_recent = datetime.min
         self.cache = None
 
+        # Refresh settings
+        self.refresh = True
+
+    def needs_refresh(self):
+        current = self.refresh or super().needs_refresh()
+        self.refresh = False
+
+        return current
+
     def _request(self):
         if (self.cache is not None) and (
             datetime.now() - self.request_recent
@@ -40,6 +49,9 @@ class GithubPanel(Panel):
         contributions = GithubAPI.get_github_contributions(
             self.username, self.github_token
         )
+        if self.cache != contributions:
+            self.refresh = True
+
         self.cache = contributions
         self.request_recent = datetime.now()
 

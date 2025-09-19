@@ -24,6 +24,15 @@ class TextPanel(Panel):
         # Initialize text and position
         self.update_text(settings.get("text", ""))
 
+        # Refresh settings
+        self.refresh = True
+
+    def needs_refresh(self):
+        current = self.refresh or super().needs_refresh()
+        self.refresh = False
+
+        return current
+
     def set_size(self, width, height):
         super().set_size(width, height)
         self._update_text_size()
@@ -31,6 +40,7 @@ class TextPanel(Panel):
     def update_text(self, text):
         self.text = text
         self._update_text_size()
+        self.refresh = True
 
     def _update_text_size(self):
         self.spacing = self.margin + self.padding
