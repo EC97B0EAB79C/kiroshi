@@ -82,7 +82,6 @@ def main(settings_file):
     panels = {}
 
     last_update = datetime.min
-    previous_image = None
     duration = 0
     while True:
         FULL_REFRESH = False
