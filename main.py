@@ -10,8 +10,6 @@ from time import sleep
 
 from datetime import datetime, timezone, timedelta
 
-from src.helper import compare_images
-
 from src.setting import Setting
 from src.panels.loader import load_panel
 
