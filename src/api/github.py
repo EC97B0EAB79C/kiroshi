@@ -15,6 +15,15 @@ def get_github_contributions(username, token, year=None):
         return None
 
     contributions = result.get("contributionCalendar", {}).get("weeks", [])
+    contributions = [
+        {
+            "contributionDays": [
+                {"color": day["color"], "data": day["date"]}
+                for day in week["contributionDays"]
+            ]
+        }
+        for week in contributions
+    ]
     logger.debug(f"Contributions found: {len(contributions)} weeks")
 
     return contributions
