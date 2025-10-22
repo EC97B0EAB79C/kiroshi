@@ -100,7 +100,7 @@ def main(settings_file):
             panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
 
         image = panels[panel_id].draw()
-        if panels[panel_id].needs_refresh():
+        if panels[panel_id].needs_refresh() or FULL_REFRESH:
             set_panel(image, FULL_REFRESH=FULL_REFRESH)
         else:
             logger.debug("Image unchanged, skipping update")
