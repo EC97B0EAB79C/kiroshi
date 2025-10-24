@@ -49,7 +49,7 @@ class CalendarPanel(Panel):
         if self.cache != events:
             self.refresh = True
 
-        if self.request_recent.date() == (datetime.now().date() - timedelta(days=1)):
+        if self.request_recent.date() < datetime.now().date():
             self.refresh = True
 
         self.cache = events
