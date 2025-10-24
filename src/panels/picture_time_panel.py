@@ -8,7 +8,9 @@ class PictureTimePanel(TimePanel):
         self.picture_panel = PicturePanel(width, height, settings, DEBUG)
 
     def needs_refresh(self):
-        return self.picture_panel.needs_refresh() or super().needs_refresh()
+        current = super().needs_refresh()
+        current = self.picture_panel.needs_refresh() or current
+        return current
 
     def _draw(self, image):
         self.picture_panel._draw(image)
