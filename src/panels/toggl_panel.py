@@ -43,7 +43,7 @@ class TogglPanel(Panel):
         self.debug_boxes = []
 
     def needs_refresh(self):
-        current = self.refresh or super().needs_refresh()
+        current = super().needs_refresh() or self.refresh
         self.refresh = False
 
         return current

@@ -33,7 +33,7 @@ class CalendarPanel(Panel):
         self.refresh = True
 
     def needs_refresh(self):
-        current = self.refresh or super().needs_refresh()
+        current = super().needs_refresh() or self.refresh
         self.refresh = False
 
         return current
