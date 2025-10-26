@@ -14,11 +14,11 @@ class Setting:
         # Load settings
         self._load_settings(settings_file)
 
-        # Load panels
-        self._load_panels()
-
         # Load schedule
         self._load_schedule()
+
+        # Load panels
+        self._load_panels()
 
         # Initialize current panel index
         self.current_panel_index = 0
