@@ -30,10 +30,8 @@ def get_file_modified_time(file_path):
         mod_datetime = datetime.datetime.fromtimestamp(mod_timestamp)
 
         return mod_datetime
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Error: The file '{file_path}' was not found.")
     except Exception as e:
-        raise Exception(f"An error occurred: {e}")
+        raise RuntimeError(f"Error getting modified time for {file_path}: {e}")
 
 
 def load_font(font_path, font_size):

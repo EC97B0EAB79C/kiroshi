@@ -23,9 +23,6 @@ class Setting:
         # Initialize current panel index
         self.current_panel_index = 0
 
-        # Verify
-        self._verify_panels()
-
     def _update(self):
         settings_mod_time = Helper.get_file_modified_time(self.settings_file)
         if settings_mod_time != self.setting_update:
