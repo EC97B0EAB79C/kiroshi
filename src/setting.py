@@ -1,6 +1,6 @@
 import logging
 
-from src.helper import load_json
+import src.helper as Helper
 from src.palette import EPD_PALETTE_MAP
 import src.default as Default
 
@@ -11,18 +11,49 @@ logger = logging.getLogger(__name__)
 
 class Setting:
     def __init__(self, settings_file=Default.SETTINGS_FILE):
-        # Load JSON files
-        logger.debug(f"Loading settings from {settings_file}")
-        self.settings_file = settings_file
-        self.settings = load_json(self.settings_file)
-        self._verify_settings()
+        # Load settings
+        self._load_settings(settings_file)
 
         # Load panels
-        panel_spec = self.settings.get("panel_spec", Default.PANEL_SPEC_FILE)
-        logger.debug(f"Loading panels from {panel_spec}")
-        self.panels = load_json(panel_spec)
+        self._load_panels()
 
         # Load schedule
+        self._load_schedule()
+
+        # Initialize current panel index
+        self.current_panel_index = 0
+
+        # Verify
+        self._verify_panels()
+
+    def _update(self):
+        settings_mod_time = Helper.get_file_modified_time(self.settings_file)
+        if settings_mod_time != self.setting_update:
+            logger.info("Settings file updated, reloading")
+            self._load_settings(self.settings_file)
+            self._load_schedule()
+
+        panel_spec = self.settings.get("panel_spec", Default.PANEL_SPEC_FILE)
+        panel_mod_time = Helper.get_file_modified_time(panel_spec)
+        if panel_mod_time != self.panels_update:
+            logger.info("Panel spec file updated, reloading")
+            self._load_panels()
+
+    def _load_settings(self, settings_file):
+        logger.debug(f"Loading settings from {settings_file}")
+        self.settings_file = settings_file
+        self.setting_update = Helper.get_file_modified_time(settings_file)
+        self.settings = Helper.load_json(self.settings_file)
+        self._verify_settings()
+
+    def _load_panels(self):
+        panel_spec = self.settings.get("panel_spec", Default.PANEL_SPEC_FILE)
+        logger.debug(f"Loading panels from {panel_spec}")
+        self.panels = Helper.load_json(panel_spec)
+        self.panels_update = Helper.get_file_modified_time(panel_spec)
+        self._verify_panels()
+
+    def _load_schedule(self):
         self.schedule = self.settings.get("schedule", [])
         if not self.schedule:
             raise ValueError("No schedule found in settings")
@@ -32,12 +63,6 @@ class Setting:
             raise ValueError("Schedule is empty")
 
         self.bedtime = self.settings.get("bedtime", None)
-
-        # Initialize current panel index
-        self.current_panel_index = 0
-
-        # Verify
-        self._verify_panels()
 
     def _verify_settings(self):
         if not self.settings:
@@ -73,6 +98,7 @@ class Setting:
             panel["settings"]["palette"] = palette
 
     def get_next_panel(self):
+        self._update()
         if self.is_bedtime():
             logger.info("Starting bedtime mode")
             bedtime_panel = self.bedtime.get("id", 0)

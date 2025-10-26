@@ -1,4 +1,6 @@
 import json
+import datetime
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 from src.palette import *
@@ -18,6 +20,20 @@ def load_json(file_path):
     except Exception as e:
         print(f"Unexpected error loading JSON from {file_path}: {e}")
         return {}
+
+
+def get_file_modified_time(file_path):
+    try:
+        file_path = Path(file_path)
+        stats = file_path.stat()
+        mod_timestamp = stats.st_mtime
+        mod_datetime = datetime.datetime.fromtimestamp(mod_timestamp)
+
+        return mod_datetime
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Error: The file '{file_path}' was not found.")
+    except Exception as e:
+        raise Exception(f"An error occurred: {e}")
 
 
 def load_font(font_path, font_size):
