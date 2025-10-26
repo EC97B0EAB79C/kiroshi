@@ -82,6 +82,7 @@ def main(settings_file):
     panels = {}
 
     last_update = datetime.min
+    last_panel_id = None
     duration = 0
     while True:
         FULL_REFRESH = False
@@ -90,7 +91,9 @@ def main(settings_file):
             panel_id, current_panel_spec, duration = settings.get_next_panel()
             logger.info(f"Displaying panel {panel_id} for {duration} seconds")
             last_update = now
-            FULL_REFRESH = True
+            if panel_id != last_panel_id:
+                FULL_REFRESH = True
+                last_panel_id = panel_id
             if current_panel_spec.get("refresh", False):
                 refresh_interval = settings.get_refresh_interval()
             else:
