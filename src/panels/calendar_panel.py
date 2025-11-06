@@ -30,6 +30,7 @@ class CalendarPanel(Panel):
         self.cache = None
 
         # Refresh settings
+        self.drawn_events = None
         self.refresh = True
 
     def needs_refresh(self):
@@ -69,18 +70,18 @@ class CalendarPanel(Panel):
             return image
 
         today = datetime.combine(date.today(), datetime.min.time()).astimezone()
-        events = [
-            event for event in events if (event["start"] and event["start"] >= today)
-        ]
 
         current_month = None
         current_day = None
         current_week = None
         event_spacing = font.getbbox("000")[2]
         location = (spacing, spacing)
+        displayed_events = []
         for event in events:
             if location[1] > self.height - spacing * 2:
                 break
+
+            displayed_events.append(event)
 
             start = event["start"]
             if start.month != current_month:
@@ -100,6 +101,11 @@ class CalendarPanel(Panel):
         draw.rectangle(
             [(0, self.height - spacing), (self.width, self.height)], fill="white"
         )
+
+        if self.drawn_events != displayed_events:
+            self.drawn_events = displayed_events
+            self.refresh = True
+
         return super()._draw(image)
 
     def _draw_month(self, image, month, font, location, spacing):

@@ -8,7 +8,7 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def get_events(ical_urls, use_cache=False):
+def get_events(ical_urls, use_cache=False, filter=True):
     logger.debug("Fetching events from iCal URLs")
 
     # Load cached calendar if requested
@@ -54,7 +54,9 @@ def get_events(ical_urls, use_cache=False):
     return events
 
 
-def _extract_events(calendar):
+def _extract_events(calendar, filter=True):
+    now = datetime.now().astimezone()
+
     events = []
     for component in calendar.walk("vevent"):
         event = {
@@ -69,6 +71,10 @@ def _extract_events(calendar):
             continue
 
         event = _format_event(event)
+
+        if filter and event["end"] < now:
+            continue
+
         divided_events = _divide_event(event)
         events.extend(divided_events)
 
