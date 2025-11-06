@@ -72,7 +72,7 @@ def _extract_events(calendar, filter=True):
 
         event = _format_event(event)
 
-        if filter and event["end"] < datetime.now().astimezone():
+        if filter and event["end"] < now:
             continue
 
         divided_events = _divide_event(event)
