@@ -55,7 +55,6 @@ def main():
         sys.exit(1)
     finally:
         logger.info("Application terminated.")
-        sys.exit(0)
 
 
 if __name__ == "__main__":

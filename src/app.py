@@ -30,23 +30,23 @@ class Application:
             now = datetime.now()
 
             if (now - last_update).total_seconds() > duration:
-                panel_id, current_panel_spec, duration = settings.get_next_panel()
+                panel_id, current_panel_spec, duration = self.settings.get_next_panel()
                 logger.info(f"Displaying panel {panel_id} for {duration} seconds")
                 last_update = now
-                FULL_REFRESH = True
+                full_refresh = True
 
                 if current_panel_spec.get("refresh", False):
-                    refresh_interval = settings.get_refresh_interval()
+                    refresh_interval = self.settings.get_refresh_interval()
                 else:
                     refresh_interval = duration
 
-            if panel_id not in panels:
-                panels[panel_id] = load_panel(current_panel_spec, DEBUG=DEBUG)
+            if panel_id not in self.panels:
+                self.panels[panel_id] = load_panel(current_panel_spec, DEBUG=self.debug)
 
-            image = panels[panel_id].draw()
+            image = self.panels[panel_id].draw()
 
-            if panels[panel_id].needs_refresh() or FULL_REFRESH:
-                set_panel(image, FULL_REFRESH=FULL_REFRESH)
+            if self.panels[panel_id].needs_refresh() or full_refresh:
+                self.epd_manager.set_panel(image,FULL_REFRESH FULL_REFRESH=full_refresh)
             else:
                 logger.debug("Image unchanged, skipping update")
 

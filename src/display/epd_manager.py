@@ -25,7 +25,7 @@ class EPDManager:
                 logger.warning("Using mock e-Paper display instead.")
                 from waveshare_epd import mock as epd_lib
 
-            epd = epd_lib.EPD()
+            self.epd = epd_lib.EPD()
             logger.info("e-Paper library imported successfully.")
 
         except Exception as e:
@@ -39,7 +39,7 @@ class EPDManager:
 
         logger.debug("Displaying image on e-Paper display")
         self.epd.init()
-        self.epd.display(epd.getbuffer(image))
+        self.epd.display(self.epd.getbuffer(image))
         self.epd.sleep()
         logger.debug("Image displayed successfully on e-Paper display")
 
