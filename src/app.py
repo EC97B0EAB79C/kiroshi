@@ -53,11 +53,11 @@ class Application:
             self._sleep_interruptible(refresh_interval)
 
     def _sleep_interruptible(self, seconds: int):
-            slept = 0
-            while slept < seconds and self.running:
-                sleep(min(1, seconds - slept))
-                slept += 1
+        slept = 0
+        while slept < seconds and self.running:
+            sleep(min(1, seconds - slept))
+            slept += 1
 
-        def stop(self):
-            self.running = False
-            self.epd_manager.cleanup()
+    def stop(self):
+        self.running = False
+        self.epd_manager.cleanup()

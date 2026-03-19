@@ -1,43 +1,27 @@
 #!/usr/bin/python
 
 import argparse
-import os
 import sys
 import signal
-import json
 import logging
-from time import sleep
 
-from datetime import datetime, timezone, timedelta
+from src.app import Application
 
-from src.setting import Setting
-from src.panels.loader import load_panel
-
-
-DEBUG = False
-logger = None
-epd = None
-
+logger = logging.getLogger(__name__)
+app_instance = None
 
 def signal_handler(sig, frame):
-    global epd
-    if epd is not None:
-        if logger:
-            logger.info("Signal received, cleaning up e-Paper display")
-        epd.init()
-        epd.Clear()
-    sys.exit(0)
+    logger.info("Signal received, initiating graceful shutdown...")
+    if app_instance is not None:
+        app_instance.stop()
+    else:
+        sys.exit(0)
 
 
-signal.signal(signal.SIGINT, signal_handler)
+def main():
+    global app_instance
 
-
-def main(settings_file):
-    pass
-
-
-if __name__ == "__main__":
-    # Parse command line arguments
+    # region: argument parsing
     parser = argparse.ArgumentParser(description="Loader")
     parser.add_argument(
         "-s",
@@ -52,15 +36,27 @@ if __name__ == "__main__":
         help="Enable debug mode",
     )
     args = parser.parse_args()
-    DEBUG = args.debug
+    # endregion
 
-    # Set logger
     logging.basicConfig(
-        level=logging.DEBUG if DEBUG else logging.INFO,
+        level=logging.DEBUG if args.debug else logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    logger = logging.getLogger(__name__)
 
-    # Main execution
-    main(args.settings)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        app_instance = Application(args.settings, args.debug)
+        app_instance.run()
+    except Exception as e:
+        logger.error(f"Fatal error during execution: {e}")
+        sys.exit(1)
+    finally:
+        logger.info("Application terminated.")
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
