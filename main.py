@@ -35,42 +35,8 @@ signal.signal(signal.SIGINT, signal_handler)
 def set_epd(name):
     global epd, logger
 
-    # Configure EPD library
-    try:
-        libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
-        logger.debug(f"Adding library directory to sys.path: {libdir}")
-        if os.path.exists(libdir):
-            sys.path.append(libdir)
-
-        if name == "epd7in3e":
-            from waveshare_epd import epd7in3e as epd_lib
-        else:
-            logger.warning(f"Unsupported e-Paper display name: {name}")
-            logger.warning("Using mock e-Paper display instead.")
-            from waveshare_epd import mock as epd_lib
-
-        epd = epd_lib.EPD()
-
-        logger.info("e-Paper library imported successfully.")
-        return
-    except Exception as e:
-        logger.error(f"Error importing e-Paper library: {e}")
-        raise RuntimeError("Failed to import e-Paper library")
 
 
-def set_panel(image, FULL_REFRESH=True):
-    global epd
-
-    if not FULL_REFRESH:
-        logger.warning("Partial refresh not implemented")
-        # TODO
-        # return
-
-    logger.debug("Displaying image on e-Paper display")
-    epd.init()
-    epd.display(epd.getbuffer(image))
-    epd.sleep()
-    logger.debug("Image displayed successfully on e-Paper display")
 
 
 def main(settings_file):
