@@ -3,4 +3,4 @@
 ## TODO
 - [ ] Coroutines
 - [ ] Implement Mock EPD Library
-- [ ] Modify `main.py`
+- [x] Modify `main.py`
