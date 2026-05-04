@@ -10,7 +10,8 @@ class EPDManager:
         self._initialize_epd(display_name)
 
     def _initialize_epd(self, name: str):
-        libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
+        basedir = os.path.dirname(os.path.realpath(__file__))
+        libdir = os.path.abspath(os.path.join(basedir, "../../lib"))
         logger.debug(f"Adding library directory to sys.path: {libdir}")
 
         if os.path.exists(libdir) and libdir not in sys.path:

@@ -46,7 +46,7 @@ class Application:
             image = self.panels[panel_id].draw()
 
             if self.panels[panel_id].needs_refresh() or full_refresh:
-                self.epd_manager.set_panel(image,FULL_REFRESH FULL_REFRESH=full_refresh)
+                self.epd_manager.set_panel(image, full_refresh=full_refresh)
             else:
                 logger.debug("Image unchanged, skipping update")
 
