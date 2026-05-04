@@ -2,6 +2,6 @@
 
 ## TODO
 - [ ] Coroutines
-- [ ] Implement Mock EPD Library
-  - [ ] Modify EPD lib search mechanism
+- [x] Implement Mock EPD Library
+  - [x] Modify EPD lib search mechanism
 - [x] Modify `main.py`
