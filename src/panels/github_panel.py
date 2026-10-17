@@ -19,12 +19,13 @@ class GithubPanel(Panel):
 
         self.padding_content = self.settings.get("padding_content", Default.PADDING_CONTENT)
 
+    async def fetch(self):
+        return await GithubAPI.get_github_contributions(self.username, self.github_token)
+
     def _draw(self, image):
         spacing = self.padding + self.margin
 
-        contributions = self.cached_request(
-            lambda: GithubAPI.get_github_contributions(self.username, self.github_token)
-        )
+        contributions = self.cache
         if contributions is None:
             image = Helper.invalid_image(
                 image, self.width, self.height, Helper.error_text("GitHub error", self.error)

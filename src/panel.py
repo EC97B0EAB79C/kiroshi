@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Awaitable, Callable, Optional
 
 from PIL import Image, ImageDraw
 
@@ -43,30 +43,35 @@ class Panel:
         self.width = width
         self.height = height
 
-    def cached_request(self, fetch: Callable):
-        """Call fetch() at most once per request_interval.
+    # Data panels set this to an async method that returns new data
+    fetch: Optional[Callable[[], Awaitable]] = None
 
-        On error, keep the last good data. Return None only when there is no data.
+    async def update(self):
+        """Get new data when it is due (once per request_interval).
+
+        Set refresh when the data changes. On error, keep the last good data.
         """
+        if self.fetch is None:
+            return
         age = datetime.now() - self.cache_time
         if self.cache is not None and age < timedelta(minutes=self.request_interval):
-            return self.cache
+            return
 
         try:
-            data = fetch()
+            data = await self.fetch()
         except Exception as e:
             logger.error(f"{type(self).__name__} request failed: {e}")
             if self.cache is None and self.error is None:
                 self.refresh = True
             self.error = e
-            return self.cache
+            return
 
         if data != self.cache or self.error is not None:
             self.refresh = True
         self.cache, self.cache_time, self.error = data, datetime.now(), None
-        return data
 
     def draw(self) -> Image.Image:
+        """Draw the panel from the data that update() got. No network here."""
         image = Image.new("RGB", (self.width, self.height), Default.BACKGROUND_COLOR)
         image = self._draw(image)
         image = self._draw_border(image)

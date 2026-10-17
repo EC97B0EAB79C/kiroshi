@@ -1,6 +1,7 @@
+import asyncio
 import unittest
 from datetime import date, datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from icalendar import Calendar, Event
 
@@ -32,7 +33,7 @@ class TestIcal(unittest.TestCase):
         parts = ical._divide_event(event)
         self.assertEqual([p["summary"] for p in parts], ["A (1/2)", "A (2/2)"])
 
-    def test_extract_events_only_future_and_sorted(self):
+    def calendar_bytes(self):
         calendar = Calendar()
         tomorrow = datetime.now().astimezone() + timedelta(days=1)
         for summary, start in [("later", tomorrow + timedelta(hours=2)), ("soon", tomorrow), ("past", tomorrow - timedelta(days=10))]:
@@ -41,15 +42,46 @@ class TestIcal(unittest.TestCase):
             event.add("dtstart", start)
             event.add("dtend", start + timedelta(minutes=30))
             calendar.add_component(event)
+        return calendar.to_ical()
 
-        events = ical._extract_events(calendar)
+    def setUp(self):
+        ical._cache.clear()
+
+    def test_get_events_only_future_and_sorted(self):
+        response = MagicMock(status_code=200, content=self.calendar_bytes(), headers={})
+        with patch("src.api.ical.async_request", AsyncMock(return_value=response)):
+            events = asyncio.run(ical.get_events(["https://a.example/a.ics"]))
         self.assertEqual([e["summary"] for e in events], ["soon", "later"])
 
-    @patch("src.api.ical.request", side_effect=ConnectionError("down"))
-    def test_all_urls_fail_raises(self, _):
-        with self.assertRaises(ConnectionError):
-            ical.get_events(["https://a.example/a.ics", "https://b.example/b.ics"])
+    def test_parse_only_when_content_changes(self):
+        response = MagicMock(status_code=200, content=self.calendar_bytes(), headers={"ETag": "v1"})
+        request = AsyncMock(return_value=response)
+        with patch("src.api.ical.async_request", request), patch("src.api.ical._parse", wraps=ical._parse) as parse:
+            first = asyncio.run(ical.get_events("https://a.example/a.ics"))
+            second = asyncio.run(ical.get_events("https://a.example/a.ics"))
+        self.assertEqual(first, second)
+        parse.assert_called_once()
+        # The second request asks the server for changes only
+        self.assertEqual(request.await_args.kwargs["headers"], {"If-None-Match": "v1"})
 
+    def test_not_modified_uses_cached_events(self):
+        ok = MagicMock(status_code=200, content=self.calendar_bytes(), headers={"ETag": "v1"})
+        not_modified = MagicMock(status_code=304, content=b"", headers={})
+        with patch("src.api.ical.async_request", AsyncMock(side_effect=[ok, not_modified])):
+            first = asyncio.run(ical.get_events("https://a.example/a.ics"))
+            second = asyncio.run(ical.get_events("https://a.example/a.ics"))
+        self.assertEqual(first, second)
+
+    def test_one_url_fails(self):
+        ok = MagicMock(status_code=200, content=self.calendar_bytes(), headers={})
+        with patch("src.api.ical.async_request", AsyncMock(side_effect=[ok, ConnectionError("down")])):
+            events = asyncio.run(ical.get_events(["https://a.example/a.ics", "https://b.example/b.ics"]))
+        self.assertEqual(len(events), 2)
+
+    @patch("src.api.ical.async_request", AsyncMock(side_effect=ConnectionError("down")))
+    def test_all_urls_fail_raises(self):
+        with self.assertRaises(ConnectionError):
+            asyncio.run(ical.get_events(["https://a.example/a.ics", "https://b.example/b.ics"]))
 
 if __name__ == "__main__":
     unittest.main()

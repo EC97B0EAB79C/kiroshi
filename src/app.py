@@ -1,5 +1,6 @@
+import asyncio
 import logging
-from time import sleep
+import signal
 from datetime import datetime
 
 from src.setting import Setting
@@ -17,7 +18,9 @@ class Application:
 
         # Panel ID -> (spec, panel). A new spec (config reload) makes a new panel.
         self.panels = {}
-        self.running = False
+        self.running = True
+        self._loop = None
+        self._stop = None
 
     def _get_panel(self, panel_id, spec):
         cached = self.panels.get(panel_id)
@@ -27,13 +30,33 @@ class Application:
             self.panels[panel_id] = cached = (spec, panel)
         return cached[1]
 
+    async def _show(self, panel_id, spec, full_refresh=True):
+        """Get new data, then draw and display only when something changed."""
+        panel = self._get_panel(panel_id, spec)
+        await panel.update()
+
+        if not (panel.needs_refresh() or full_refresh):
+            logger.debug("Nothing changed, skipping draw")
+            return
+
+        image = panel.draw()
+        # The display update is slow (blocking SPI); run it in a thread
+        await asyncio.to_thread(self.epd_manager.set_panel, image)
+
     def draw_once(self):
         panel_id, spec, _ = self.settings.get_next_panel()
-        self.epd_manager.set_panel(self._get_panel(panel_id, spec).draw())
+        asyncio.run(self._show(panel_id, spec))
 
     def run(self):
+        asyncio.run(self._run())
+
+    async def _run(self):
         logger.info("Starting application loop")
-        self.running = True
+        self._loop = asyncio.get_running_loop()
+        self._stop = asyncio.Event()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            self._loop.add_signal_handler(sig, self.stop)
+
         last_update = datetime.min
         duration = 0
 
@@ -53,24 +76,21 @@ class Application:
                     else:
                         refresh_interval = duration
 
-                panel = self._get_panel(panel_id, spec)
-                image = panel.draw()
-
-                if panel.needs_refresh() or full_refresh:
-                    self.epd_manager.set_panel(image)
-                else:
-                    logger.debug("Image unchanged, skipping update")
-
-                self._sleep_interruptible(refresh_interval)
+                await self._show(panel_id, spec, full_refresh)
+                await self._sleep(refresh_interval)
         finally:
             self.epd_manager.cleanup()
 
-    def _sleep_interruptible(self, seconds: float):
-        slept = 0
-        while slept < seconds and self.running:
-            sleep(min(1, seconds - slept))
-            slept += 1
+    async def _sleep(self, seconds: float):
+        """Sleep, but wake up at once on stop()."""
+        try:
+            await asyncio.wait_for(self._stop.wait(), seconds)
+        except asyncio.TimeoutError:
+            pass
 
     def stop(self):
-        # Only set the flag. run() cleans up the display when the loop ends.
+        # Only stop the loop. run() cleans up the display when the loop ends.
+        logger.info("Stopping...")
         self.running = False
+        if self._loop is not None and not self._loop.is_closed():
+            self._loop.call_soon_threadsafe(self._stop.set)

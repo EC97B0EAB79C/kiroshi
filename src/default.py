@@ -30,5 +30,4 @@ DURATION_REFRESH = 60
 # File
 SETTINGS_FILE = "example/setting.json"
 PANEL_SPEC_FILE = "example/panels.json"
-CACHE_DIR = ".cache"
 ERROR_ICON = "icons/error_72dp.png"

@@ -1,3 +1,5 @@
+import asyncio
+
 from PIL import ImageDraw
 
 from src.panel import Panel
@@ -17,6 +19,10 @@ class GridPanel(Panel):
         # Ask all children, so each child resets its own flag
         children = [panel.needs_refresh() for panel in self.panels if panel]
         return super().needs_refresh() or any(children)
+
+    async def update(self):
+        # Update all children at the same time
+        await asyncio.gather(*(panel.update() for panel in self.panels if panel))
 
     def set_size(self, width, height):
         super().set_size(width, height)

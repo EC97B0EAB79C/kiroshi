@@ -1,61 +1,66 @@
+import asyncio
+import hashlib
 import logging
 from datetime import datetime, timedelta, time
 
 from icalendar import Calendar
 
-import src.default as Default
-from src.api import request
-from src.helper import resolve_path
-
+from src.api import async_request
 
 logger = logging.getLogger(__name__)
 
+# URL -> (request headers, content hash, events). Parse a calendar only when it changes.
+_cache = {}
 
-def get_events(ical_urls, use_cache=False) -> list:
-    """Return future events from all URLs. Raise when all URLs fail."""
-    logger.debug("Fetching events from iCal URLs")
 
-    if use_cache:
-        cached_calendar = _load_cache()
-        if cached_calendar:
-            logger.debug("> Cached calendar loaded successfully")
-            return _extract_events(cached_calendar)
-
+async def get_events(ical_urls) -> list:
+    """Return future events from all URLs, read at the same time. Raise when all URLs fail."""
     if not isinstance(ical_urls, list):
         ical_urls = [ical_urls]
+    if not ical_urls:
+        raise ValueError("No iCal URLs")
 
-    calendar = None
-    error = None
-    for ical_url in ical_urls:
-        try:
-            logger.debug(f"> Fetching events from iCal URL: {ical_url}")
-            temp_calendar = Calendar.from_ical(request("GET", ical_url).content)
-        except Exception as e:
-            logger.error(f"> Error fetching {ical_url}: {e}")
-            error = e
-            continue
+    results = await asyncio.gather(*map(_get_url_events, ical_urls), return_exceptions=True)
+    errors = [r for r in results if isinstance(r, Exception)]
+    for url, result in zip(ical_urls, results):
+        if isinstance(result, Exception):
+            logger.error(f"> Error fetching {url}: {result}")
+    if len(errors) == len(results):
+        raise errors[0]
 
-        if calendar is None:
-            calendar = temp_calendar
-        else:
-            for component in temp_calendar.walk("vevent"):
-                calendar.add_component(component)
+    now = datetime.now().astimezone()
+    events = [
+        event
+        for result in results
+        if not isinstance(result, Exception)
+        for event in result
+        if event["end"] >= now
+    ]
+    logger.debug(f"> {len(events)} future events")
+    return sorted(events, key=lambda x: x["start"])
 
-    if calendar is None:
-        raise error or ValueError("No iCal URLs")
 
-    if use_cache:
-        _save_cache(calendar)
+async def _get_url_events(url) -> list:
+    headers, digest, events = _cache.get(url, ({}, None, None))
+    response = await async_request("GET", url, headers=headers)
+    if response.status_code == 304:
+        return events
 
-    events = _extract_events(calendar)
-    logger.debug(f"> Extracted {len(events)} events from calendar")
+    new_digest = hashlib.sha256(response.content).hexdigest()
+    if new_digest != digest:
+        logger.debug(f"> Parsing {url}")
+        events = await asyncio.to_thread(_parse, response.content)
 
+    validators = {"If-None-Match": response.headers.get("ETag"), "If-Modified-Since": response.headers.get("Last-Modified")}
+    _cache[url] = ({k: v for k, v in validators.items() if v}, new_digest, events)
     return events
 
 
-def _extract_events(calendar, only_future=True):
-    now = datetime.now().astimezone()
+def _parse(content) -> list:
+    return _extract_events(Calendar.from_ical(content))
 
+
+def _extract_events(calendar) -> list:
     events = []
     for component in calendar.walk("vevent"):
         start = component.get("dtstart")
@@ -71,32 +76,9 @@ def _extract_events(calendar, only_future=True):
                 "end": end.dt,
             }
         )
-
-        if only_future and event["end"] < now:
-            continue
-
         events.extend(_divide_event(event))
 
-    return sorted(events, key=lambda x: x["start"])
-
-
-# ----- Cache Management -----
-def _cache_file():
-    return resolve_path(Default.CACHE_DIR) / "calendar_cache.ics"
-
-
-def _save_cache(calendar):
-    logger.debug(f"> Saving calendar cache to {_cache_file()}")
-    _cache_file().parent.mkdir(parents=True, exist_ok=True)
-    _cache_file().write_bytes(calendar.to_ical())
-
-
-def _load_cache():
-    try:
-        return Calendar.from_ical(_cache_file().read_bytes())
-    except FileNotFoundError:
-        logger.info("> No calendar cache found")
-        return None
+    return events
 
 
 # ----- Helper Functions -----

@@ -1,4 +1,5 @@
 import os
+import asyncio
 from datetime import datetime, timedelta
 
 from PIL import ImageDraw
@@ -22,7 +23,7 @@ class TogglPanel(Panel):
         api_key = self.settings.get("api_key", os.getenv("TOGGL_API_KEY"))
         self.auth = f"{api_key}:api_token"
 
-        # Toggl Data (loaded when needed)
+        # Projects by ID (loaded when an entry has an unknown project)
         self.projects = {}
 
         # Debug settings
@@ -32,14 +33,29 @@ class TogglPanel(Panel):
         super().set_size(width, height)
         self.font_size = Default.FONT_SIZE["H1"] / 480 * self.height
 
-    def _fetch(self):
+    async def fetch(self):
         start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-        return TogglAPI.get_time_entries(self.auth, start)
+        entries = await TogglAPI.get_time_entries(self.auth, start)
+
+        # Load the projects of all workspaces with unknown projects, at the same time
+        workspaces = {
+            entry.get("workspace_id")
+            for entry in entries
+            if entry.get("project_id") and entry["project_id"] not in self.projects
+        }
+        results = await asyncio.gather(
+            *(TogglAPI.get_workspace_projects(self.auth, w) for w in workspaces if w),
+            return_exceptions=True,
+        )
+        for projects in results:
+            if isinstance(projects, dict):
+                self.projects.update(projects)
+        return entries
 
     def _draw(self, image):
         self.debug_boxes = []
 
-        time_entries = self.cached_request(self._fetch)
+        time_entries = self.cache
         if time_entries is None:
             image = Helper.invalid_image(
                 image, self.width, self.height, Helper.error_text("Toggl error", self.error)
@@ -54,15 +70,8 @@ class TogglPanel(Panel):
 
         return super()._draw(image)
 
-    def _get_project_details(self, project_id, workspace_id=None) -> dict:
-        if not project_id:
-            return {}
-        if project_id not in self.projects and workspace_id is not None:
-            try:
-                self.projects = TogglAPI.get_workspace_projects(self.auth, workspace_id)
-            except Exception:
-                pass
-        return self.projects.get(project_id) or {}
+    def _get_project_details(self, project_id) -> dict:
+        return (self.projects.get(project_id) or {}) if project_id else {}
 
     def _text(self, draw, xy, text, font, area_height, offset_y):
         """Draw text, centered in a row of area_height that starts at offset_y."""
@@ -95,9 +104,7 @@ class TogglPanel(Panel):
             return image
 
         # Draw project name and color
-        project = self._get_project_details(
-            entry.get("project_id"), entry.get("workspace_id")
-        )
+        project = self._get_project_details(entry.get("project_id"))
         font = Helper.load_font(self.font, self.font_size * 0.8)
         bbox = Helper.text_bbox(project.get("name", ""), font)
         dot = bbox[3] - bbox[1]
@@ -138,13 +145,11 @@ class TogglPanel(Panel):
         content_height = (self.height - spacing * 2) / 10
 
         summary = {}
-        workspaces = {}
         for entry in time_entries:
             project_id = entry.get("project_id")
             duration = entry.get("duration", -1)
             if project_id and duration >= 0:
                 summary[project_id] = summary.get(project_id, 0) + duration
-                workspaces[project_id] = entry.get("workspace_id")
         total_duration = sum(summary.values())
 
         if total_duration == 0:
@@ -158,9 +163,7 @@ class TogglPanel(Panel):
                     (current_x, self.height - spacing - content_height),
                     (current_x + length, self.height - spacing),
                 ],
-                fill=self._get_project_details(project_id, workspaces[project_id]).get(
-                    "color", "#000000"
-                ),
+                fill=self._get_project_details(project_id).get("color", "#000000"),
             )
             current_x += length
 

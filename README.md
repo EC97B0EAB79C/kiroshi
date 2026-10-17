@@ -68,7 +68,8 @@ The 3D-printable case is in [`hardware/`](hardware/README.md).
 - [x] Font cache in `helper.load_font()` (`functools.lru_cache`)
 - [x] Do not quantize the same image more than one time (quantize once in `Panel.draw()`)
 - [ ] Partial refresh support in `EPDManager` (not possible on `epd7in3e`: the Waveshare driver has full refresh only)
-- [ ] Coroutines: `asyncio` main loop and `aiohttp` for API requests
+- [x] Coroutines: `asyncio` main loop; API requests run at the same time (in worker threads, with the existing `requests` retry, not `aiohttp`)
+- [x] Draw only when data or time changed; parse a calendar only when it changed
 
 ### Robustness
 - [x] Retry with backoff for network requests

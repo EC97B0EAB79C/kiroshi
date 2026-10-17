@@ -1,6 +1,6 @@
 import logging
 
-from src.api import request
+from src.api import async_request
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ query GetUserContributions($username: String!, $from: DateTime, $to: DateTime) {
 """
 
 
-def get_github_contributions(username, token, year=None) -> list:
+async def get_github_contributions(username, token, year=None) -> list:
     """Return the contribution weeks of a user. Raise on error."""
     logger.debug(f"Fetching contributions for user: {username}")
     variables = {"username": username}
@@ -31,12 +31,13 @@ def get_github_contributions(username, token, year=None) -> list:
         variables["from"] = f"{year}-01-01T00:00:00Z"
         variables["to"] = f"{year}-12-31T23:59:59Z"
 
-    data = request(
+    response = await async_request(
         "POST",
         URL,
         json={"query": QUERY, "variables": variables},
         headers={"Authorization": f"Bearer {token}"},
-    ).json()
+    )
+    data = response.json()
 
     user = (data.get("data") or {}).get("user")
     if user is None:

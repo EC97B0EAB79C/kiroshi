@@ -1,6 +1,8 @@
 """Draw each panel with the mock display data. No network."""
+import asyncio
+import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import requests
 from PIL import Image
@@ -19,6 +21,7 @@ GITHUB_WEEKS = [{"contributionDays": [{"color": "#40c463", "date": "2026-01-01"}
 
 def draw(spec):
     panel = load_panel(spec, width=SIZE[0], height=SIZE[1], palette="6_colors")
+    asyncio.run(panel.update())
     return panel, panel.draw()
 
 
@@ -32,7 +35,7 @@ class TestPanels(unittest.TestCase):
             panel, image = draw(spec)
             self.assertDrawn(image)
             self.assertTrue(panel.needs_refresh())
-            panel.draw()
+            asyncio.run(panel.update())
             self.assertFalse(panel.needs_refresh())
 
     def test_picture(self):
@@ -51,6 +54,7 @@ class TestPanels(unittest.TestCase):
     def test_toggl(self, *_):
         panel, image = draw({"type": "toggl", "settings": {"api_key": "x"}})
         self.assertDrawn(image)
+        self.assertEqual(panel.projects, TOGGL_PROJECTS)
         boxes = len(panel.debug_boxes)
         panel.draw()
         self.assertEqual(len(panel.debug_boxes), boxes)
@@ -70,8 +74,9 @@ class TestPanels(unittest.TestCase):
     def test_api_error_keeps_last_data(self):
         with patch("src.api.github.get_github_contributions", return_value=GITHUB_WEEKS):
             panel, _ = draw({"type": "github", "settings": {"username": "x"}})
+        panel.cache_time = panel.cache_time.min  # make the next request due
         with patch("src.api.github.get_github_contributions", side_effect=requests.HTTPError("down")):
-            panel.draw()
+            asyncio.run(panel.update())
         self.assertEqual(panel.cache, GITHUB_WEEKS)
         self.assertIsNotNone(panel.error)
 
@@ -80,6 +85,44 @@ class TestPanels(unittest.TestCase):
             panel, image = draw({"type": "github", "settings": {"username": "x"}})
         self.assertDrawn(image)
         self.assertIsNone(panel.cache)
+
+    def test_grid_fetches_at_the_same_time(self):
+        async def slow_fetch(*_):
+            await asyncio.sleep(0.3)
+            return GITHUB_WEEKS
+
+        child = {"type": "github", "settings": {"username": "x"}}
+        with patch("src.api.github.get_github_contributions", side_effect=slow_fetch):
+            panel = load_panel({"type": "four", "panels": [child] * 4}, width=SIZE[0], height=SIZE[1])
+            start = time.perf_counter()
+            asyncio.run(panel.update())
+        self.assertLess(time.perf_counter() - start, 0.6)  # not 4 x 0.3 s
+        self.assertTrue(all(p.cache == GITHUB_WEEKS for p in panel.panels))
+
+    def test_no_new_request_before_interval(self):
+        with patch("src.api.github.get_github_contributions", return_value=GITHUB_WEEKS) as api:
+            panel, _ = draw({"type": "github", "settings": {"username": "x", "request_interval": 5}})
+            self.assertTrue(panel.needs_refresh())
+            asyncio.run(panel.update())
+        api.assert_awaited_once()
+        self.assertFalse(panel.needs_refresh())
+
+
+class TestApplication(unittest.TestCase):
+    def test_skips_draw_when_nothing_changed(self):
+        from src.app import Application
+
+        app = Application.__new__(Application)
+        panel = MagicMock(update=AsyncMock(), needs_refresh=MagicMock(return_value=False))
+        app._get_panel = MagicMock(return_value=panel)
+        app.epd_manager = MagicMock()
+
+        asyncio.run(app._show(0, {}, full_refresh=False))
+        panel.draw.assert_not_called()
+        app.epd_manager.set_panel.assert_not_called()
+
+        asyncio.run(app._show(0, {}, full_refresh=True))
+        app.epd_manager.set_panel.assert_called_once_with(panel.draw.return_value)
 
 
 if __name__ == "__main__":

@@ -24,8 +24,17 @@ class CalendarPanel(Panel):
 
         self.entry_padding = settings.get("entry_padding", Default.PADDING_CONTENT)
 
-        # Refresh settings: (day, events) on the display now
-        self.drawn = None
+        # Day on the display now ("today" mark)
+        self.day = None
+
+    async def fetch(self):
+        return await IcalAPI.get_events(self.ical_urls)
+
+    async def update(self):
+        await super().update()
+        if self.day != date.today():
+            self.day = date.today()
+            self.refresh = True
 
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
@@ -34,7 +43,7 @@ class CalendarPanel(Panel):
 
         font = Helper.load_font(self.font, self.font_size)
 
-        events = self.cached_request(lambda: IcalAPI.get_events(self.ical_urls))
+        events = self.cache
         if events is None:
             image = Helper.invalid_image(
                 image, self.width, self.height, Helper.error_text("Calendar error", self.error)
@@ -46,12 +55,9 @@ class CalendarPanel(Panel):
         current_week = None
         event_spacing = font.getbbox("000")[2]
         location = (spacing, spacing)
-        displayed_events = []
         for event in events:
             if location[1] > self.height - spacing * 2:
                 break
-
-            displayed_events.append(event)
 
             start = event["start"]
             if (start.year, start.month) != current_month:
@@ -71,12 +77,6 @@ class CalendarPanel(Panel):
         draw.rectangle(
             [(0, self.height - spacing), (self.width, self.height)], fill="white"
         )
-
-        # Refresh when the events or the day ("today" mark) change
-        drawn = (date.today(), displayed_events)
-        if self.drawn != drawn:
-            self.drawn = drawn
-            self.refresh = True
 
         return super()._draw(image)
 
