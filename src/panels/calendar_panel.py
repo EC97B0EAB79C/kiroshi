@@ -1,17 +1,19 @@
-from PIL import Image, ImageDraw, ImageFont
-from datetime import date, datetime, timedelta, time
+from datetime import date
+
+from PIL import ImageDraw
 
 from src.panel import Panel
 import src.helper as Helper
-from src.palette import *
+from src.palette import PALETTE_GREEN, PALETTE_RED
 import src.default as Default
 
 import src.api.ical as IcalAPI
 
 
 class CalendarPanel(Panel):
-    def __init__(self, width, height, settings, DEBUG=False):
-        super().__init__(width, height, settings, DEBUG)
+    def __init__(self, width, height, settings=None, debug=False):
+        super().__init__(width, height, settings, debug)
+        settings = self.settings
 
         # Text settings
         self.font = settings.get("font", Default.FONT_EMOJI)
@@ -20,43 +22,10 @@ class CalendarPanel(Panel):
         # Calendar settings
         self.ical_urls = settings.get("ical_urls")
 
-        # Margin, padding and border settings
-        self.padding = settings.get("padding", Default.PADDING)
         self.entry_padding = settings.get("entry_padding", Default.PADDING_CONTENT)
 
-        # Request settings
-        self.request_interval = settings.get("request_interval", 0)
-        self.request_recent = datetime.min
-        self.cache = None
-
-        # Refresh settings
-        self.drawn_events = None
-        self.refresh = True
-
-    def needs_refresh(self):
-        current = super().needs_refresh() or self.refresh
-        self.refresh = False
-
-        return current
-
-    def _request(self):
-        if (self.cache is not None) and (
-            datetime.now() - self.request_recent
-            < timedelta(minutes=self.request_interval)
-        ):
-            return self.cache
-
-        events = IcalAPI.get_events(self.ical_urls)
-        if self.cache != events:
-            self.refresh = True
-
-        if self.request_recent.date() < datetime.now().date():
-            self.refresh = True
-
-        self.cache = events
-        self.request_recent = datetime.now()
-
-        return self.cache
+        # Refresh settings: (day, events) on the display now
+        self.drawn = None
 
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
@@ -65,11 +34,12 @@ class CalendarPanel(Panel):
 
         font = Helper.load_font(self.font, self.font_size)
 
-        events = self._request()
-        if not events:
-            return image
-
-        today = datetime.combine(date.today(), datetime.min.time()).astimezone()
+        events = self.cached_request(lambda: IcalAPI.get_events(self.ical_urls))
+        if events is None:
+            image = Helper.invalid_image(
+                image, self.width, self.height, Helper.error_text("Calendar error", self.error)
+            )
+            return super()._draw(image)
 
         current_month = None
         current_day = None
@@ -84,16 +54,16 @@ class CalendarPanel(Panel):
             displayed_events.append(event)
 
             start = event["start"]
-            if start.month != current_month:
-                current_month = start.month
+            if (start.year, start.month) != current_month:
+                current_month = (start.year, start.month)
                 location = self._draw_month(image, start, font, location, event_spacing)
-            if start.isocalendar()[1] != current_week:
-                current_week = start.isocalendar()[1]
+            if start.isocalendar()[:2] != current_week:
+                current_week = start.isocalendar()[:2]
                 location = self._draw_week(
-                    image, current_week, font, location, event_spacing
+                    image, current_week[1], font, location, event_spacing
                 )
-            if start.day != current_day:
-                current_day = start.day
+            if start.date() != current_day:
+                current_day = start.date()
                 location = self._draw_day(image, start, font, location)
 
             location = self._draw_entry(image, event, font, location, event_spacing)
@@ -102,17 +72,17 @@ class CalendarPanel(Panel):
             [(0, self.height - spacing), (self.width, self.height)], fill="white"
         )
 
-        if self.drawn_events != displayed_events:
-            self.drawn_events = displayed_events
+        # Refresh when the events or the day ("today" mark) change
+        drawn = (date.today(), displayed_events)
+        if self.drawn != drawn:
+            self.drawn = drawn
             self.refresh = True
 
         return super()._draw(image)
 
     def _draw_month(self, image, month, font, location, spacing):
         text = month.strftime("%Y %B")
-        bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text, font=font
-        )
+        bbox = Helper.text_bbox(text, font)
         position = (
             location[0] - bbox[0] + spacing,
             location[1] - bbox[1],
@@ -128,9 +98,7 @@ class CalendarPanel(Panel):
 
     def _draw_week(self, image, week, font, location, spacing):
         text = f"Week {week}"
-        bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text, font=font
-        )
+        bbox = Helper.text_bbox(text, font)
         position = (
             location[0] - bbox[0] + spacing,
             location[1] - bbox[1],
@@ -147,9 +115,7 @@ class CalendarPanel(Panel):
     def _draw_day(self, image, day, font, location):
         is_today = day.date() == date.today()
         text = day.strftime("%d")
-        bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text, font=font
-        )
+        bbox = Helper.text_bbox(text, font)
         position = (
             location[0] - bbox[0],
             location[1] - bbox[1],
@@ -182,9 +148,7 @@ class CalendarPanel(Panel):
             text += (
                 f"\n{entry['start'].strftime('%H:%M')}-{entry['end'].strftime('%H:%M')}"
             )
-        bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text, font=font
-        )
+        bbox = Helper.text_bbox(text, font)
         position = (
             location[0] + spacing,
             location[1] - bbox[1],

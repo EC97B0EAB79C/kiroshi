@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw
 
 from src.panel import Panel
 import src.helper as Helper
@@ -6,8 +6,9 @@ import src.default as Default
 
 
 class TextPanel(Panel):
-    def __init__(self, width=800, height=480, settings={}, DEBUG=False):
-        super().__init__(width, height, settings, DEBUG)
+    def __init__(self, width=800, height=480, settings=None, debug=False):
+        super().__init__(width, height, settings, debug)
+        settings = self.settings
 
         # Text settings
         self.font = settings.get("font", Default.FONT)
@@ -18,26 +19,17 @@ class TextPanel(Panel):
         self.outline_color = settings.get("outline_color", Default.OUTLINE_COLOR)
         self.outline_size = settings.get("outline_size", Default.OUTLINE_SIZE)
 
-        # Margin, padding and border settings
-        self.padding = settings.get("padding", Default.PADDING)
-
         # Initialize text and position
+        self.text = None
         self.update_text(settings.get("text", ""))
-
-        # Refresh settings
-        self.refresh = True
-
-    def needs_refresh(self):
-        current = super().needs_refresh() or self.refresh
-        self.refresh = False
-
-        return current
 
     def set_size(self, width, height):
         super().set_size(width, height)
         self._update_text_size()
 
     def update_text(self, text):
+        if text == self.text:
+            return
         self.text = text
         self._update_text_size()
         self.refresh = True
@@ -47,48 +39,24 @@ class TextPanel(Panel):
 
         font = Helper.load_font(self.font, self.font_size)
         self.draw_text = Helper.cut_text(self.text, font, self.width - self.spacing * 2)
-        self.bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), self.draw_text, font=font, align=self.align
+        self.bbox = Helper.text_bbox(self.draw_text, font, self.align)
+        x, y = Helper.position(
+            self.bbox, self.width, self.height, self.spacing, location=self.location
         )
-        self.position = Helper.position(
-            self.bbox,
-            self.width,
-            self.height,
-            self.spacing,
-            location=self.location,
-        )
-        self.position = (
-            self.position[0] - self.bbox[0],
-            self.position[1] - self.bbox[1],
-        )
+        self.position = (x - self.bbox[0], y - self.bbox[1])
 
     def _draw(self, image):
         draw = ImageDraw.Draw(image)
         font = Helper.load_font(self.font, self.font_size)
+        text = {"text": self.draw_text, "font": font, "align": self.align}
 
         if self.outline_color:
-            outline_size = self.outline_size
-            for dx, dy in [
-                (-outline_size, -outline_size),
-                (outline_size, outline_size),
-                (-outline_size, outline_size),
-                (outline_size, -outline_size),
-            ]:
-                draw.text(
-                    (self.position[0] + dx, self.position[1] + dy),
-                    self.draw_text,
-                    fill=self.outline_color,
-                    font=font,
-                    align=self.align,
-                )
+            size = self.outline_size
+            for dx, dy in [(-size, -size), (size, size), (-size, size), (size, -size)]:
+                position = (self.position[0] + dx, self.position[1] + dy)
+                draw.text(position, fill=self.outline_color, **text)
 
-        draw.text(
-            self.position,
-            self.draw_text,
-            fill=self.font_color,
-            font=font,
-            align=self.align,
-        )
+        draw.text(self.position, fill=self.font_color, **text)
 
         return super()._draw(image)
 

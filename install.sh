@@ -12,7 +12,6 @@ NC='\033[0m'
 GIT_REPO_URL="https://github.com/EC97B0EAB79C/kiroshi"
 SERVICE_NAME="kiroshi"
 PYTHON_SCRIPT="main.py"
-PYTHON_SCRIPT_CLEAR="clear.py"
 RUN_USER="${SUDO_USER:-$USER}"
 
 # Path
@@ -79,7 +78,7 @@ Group=$RUN_USER
 
 WorkingDirectory=$INSTALL_DIR
 ExecStart=$WRAPPER_SCRIPT_PATH_START
-ExecStopPost=python3 "$INSTALL_DIR/$PYTHON_SCRIPT_CLEAR"
+ExecStopPost=python3 "$INSTALL_DIR/$PYTHON_SCRIPT" --clear
 
 Restart=always
 RestartSec=10

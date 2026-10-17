@@ -29,5 +29,8 @@ class EPD:
     def getbuffer(self, image):
         return image
 
+    def Clear(self):
+        logger.debug("Mock e-Paper display cleared")
+
     def sleep(self):
         logger.debug("Mock e-Paper display sleep")

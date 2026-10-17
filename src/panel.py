@@ -1,41 +1,76 @@
-from PIL import Image, ImageDraw, ImageFont
+import logging
+from datetime import datetime, timedelta
+from typing import Callable
+
+from PIL import Image, ImageDraw
 
 import src.default as Default
 
+logger = logging.getLogger(__name__)
+
 
 class Panel:
-    def __init__(self, width=800, height=480, settings={}, Debug=False):
+    def __init__(self, width=800, height=480, settings=None, debug=False):
+        settings = settings or {}
         self.width = width
         self.height = height
         self.settings = settings
-        self.DEBUG = Debug
+        self.debug = debug
 
         # Margin, padding and border settings
         self.margin = settings.get("margin", Default.MARGIN)
+        self.padding = settings.get("padding", Default.PADDING)
         self.border_color = settings.get("border_color", Default.BORDER_COLOR)
         self.border_width = settings.get("border_width", Default.BORDER_WIDTH)
 
         # Quantization settings
         self.palette_name = settings.get("palette", "6_colors")
 
+        # Request settings (minutes between API requests)
+        self.request_interval = settings.get("request_interval", 0)
+        self.cache = None
+        self.cache_time = datetime.min
+        self.error = None
+
         # Refresh settings
         self.refresh = True
 
-    def needs_refresh(self):
-        current = self.refresh
-        self.refresh = False
-
+    def needs_refresh(self) -> bool:
+        current, self.refresh = self.refresh, False
         return current
 
     def set_size(self, width, height):
         self.width = width
         self.height = height
 
-    def draw(self):
+    def cached_request(self, fetch: Callable):
+        """Call fetch() at most once per request_interval.
+
+        On error, keep the last good data. Return None only when there is no data.
+        """
+        age = datetime.now() - self.cache_time
+        if self.cache is not None and age < timedelta(minutes=self.request_interval):
+            return self.cache
+
+        try:
+            data = fetch()
+        except Exception as e:
+            logger.error(f"{type(self).__name__} request failed: {e}")
+            if self.cache is None and self.error is None:
+                self.refresh = True
+            self.error = e
+            return self.cache
+
+        if data != self.cache or self.error is not None:
+            self.refresh = True
+        self.cache, self.cache_time, self.error = data, datetime.now(), None
+        return data
+
+    def draw(self) -> Image.Image:
         image = Image.new("RGB", (self.width, self.height), Default.BACKGROUND_COLOR)
         image = self._draw(image)
         image = self._draw_border(image)
-        if self.DEBUG:
+        if self.debug:
             image = self._draw_debug(image)
 
         return image
