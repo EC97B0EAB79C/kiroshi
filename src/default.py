@@ -1,3 +1,8 @@
+from pathlib import Path
+
+# Project root (all relative paths start here)
+ROOT = Path(__file__).resolve().parent.parent
+
 # Text
 # Font
 FONT = "fonts/roboto_mono/static/RobotoMono-Regular.ttf"
@@ -25,3 +30,4 @@ DURATION_REFRESH = 60
 # File
 SETTINGS_FILE = "example/setting.json"
 PANEL_SPEC_FILE = "example/panels.json"
+ERROR_ICON = "icons/error_72dp.png"

@@ -1,99 +1,87 @@
 import os
+import asyncio
+from datetime import datetime, timedelta
 
-from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime, timezone, timedelta
+from PIL import ImageDraw
 
 from src.panel import Panel
 import src.helper as Helper
-from src.palette import *
 import src.default as Default
 
 import src.api.toggl as TogglAPI
 
-TOGGL_API_KEY = os.getenv("TOGGL_API_KEY")
-
 
 class TogglPanel(Panel):
-    def __init__(self, width, height, settings=None, DEBUG=False):
-        super().__init__(width, height, settings, DEBUG)
+    def __init__(self, width, height, settings=None, debug=False):
+        super().__init__(width, height, settings, debug)
 
         # Text settings
-        self.font = settings.get("font", Default.FONT_EMOJI)
-        self.font_size = Default.FONT_SIZE["H1"] / 480 * self.height
+        self.font = self.settings.get("font", Default.FONT_EMOJI)
+        self.set_size(width, height)
 
         # Toggl API settings
-        self.auth = f"{settings.get('api_key', TOGGL_API_KEY)}:api_token"
-        self.api_key_status = TogglAPI.verify_api_key(self.auth)
+        api_key = self.settings.get("api_key", os.getenv("TOGGL_API_KEY"))
+        self.auth = f"{api_key}:api_token"
 
-        # Margin, padding and border settings
-        self.padding = settings.get("padding", Default.PADDING)
-
-        # Toggl Data
-        self.projects = TogglAPI.get_workspace_projects(self.auth, self.api_key_status)
-
-        # Request settings
-        self.request_interval = settings.get("request_interval", 0)
-        self.request_recent = datetime.min
-        self.cache = None
-
-        # Refresh settings
-        self.refresh = True
+        # Projects by ID (loaded when an entry has an unknown project)
+        self.projects = {}
 
         # Debug settings
         self.debug_boxes = []
 
-    def needs_refresh(self):
-        current = super().needs_refresh() or self.refresh
-        self.refresh = False
-
-        return current
-
     def set_size(self, width, height):
         super().set_size(width, height)
-        self.font_size = 96 / 480 * self.height
+        self.font_size = Default.FONT_SIZE["H1"] / 480 * self.height
 
-    def _request(self):
-        if (self.cache is not None) and (
-            datetime.now() - self.request_recent
-            < timedelta(minutes=self.request_interval)
-        ):
-            return self.cache
+    async def fetch(self):
+        start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        entries = await TogglAPI.get_time_entries(self.auth, start)
 
-        time_entries = TogglAPI.get_time_entries(
-            self.auth, (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        # Load the projects of all workspaces with unknown projects, at the same time
+        workspaces = {
+            entry.get("workspace_id")
+            for entry in entries
+            if entry.get("project_id") and entry["project_id"] not in self.projects
+        }
+        results = await asyncio.gather(
+            *(TogglAPI.get_workspace_projects(self.auth, w) for w in workspaces if w),
+            return_exceptions=True,
         )
-        if self.cache != time_entries:
-            self.refresh = True
-
-        self.cache = time_entries
-        self.request_recent = datetime.now()
-
-        return self.cache
+        for projects in results:
+            if isinstance(projects, dict):
+                self.projects.update(projects)
+        return entries
 
     def _draw(self, image):
-        if not self.api_key_status:
-            image = self._draw_api_invalid(image)
-            return image
+        self.debug_boxes = []
 
-        time_entries = self._request()
-        current_entry = time_entries[0]
+        time_entries = self.cache
+        if time_entries is None:
+            image = Helper.invalid_image(
+                image, self.width, self.height, Helper.error_text("Toggl error", self.error)
+            )
+            return super()._draw(image)
+
+        current_entry = time_entries[0] if time_entries else None
         image = self._draw_current_entry(image, current_entry)
         image = self._draw_summary(image, time_entries)
 
-        image = Helper.quantize_image(image, self.palette_name)
+        image = Helper.quantize_image(image, self.palette_name).convert("RGB")
 
         return super()._draw(image)
 
-    def _get_project_details(self, project_id, workspace_id=None):
-        if not project_id:
-            return None
-        if project_id in self.projects:
-            return self.projects[project_id]
+    def _get_project_details(self, project_id) -> dict:
+        return (self.projects.get(project_id) or {}) if project_id else {}
 
-        if workspace_id is None:
-            return None
-        self.projects = TogglAPI.get_workspace_projects(self.auth, workspace_id)
-        return self.projects.get(project_id, None)
+    def _text(self, draw, xy, text, font, area_height, offset_y):
+        """Draw text, centered in a row of area_height that starts at offset_y."""
+        spacing = self.margin + self.padding
+        bbox = Helper.text_bbox(text, font)
+        y = Helper.position(bbox, self.width - spacing * 2, area_height, spacing)[1]
+        position = (xy, y - bbox[1] + spacing + offset_y)
+        draw.text(position, text, fill="black", font=font, align="left")
+        self.debug_boxes.append((position, bbox))
+        return position, bbox
 
     def _draw_current_entry(self, image, entry):
         draw = ImageDraw.Draw(image)
@@ -103,134 +91,49 @@ class TogglPanel(Panel):
         content_height = self.height - spacing * 2
 
         # Draw description
-        # Set content
         font = Helper.load_font(self.font, self.font_size)
         if not entry:
             text_description = "No current\ntime entry"
         else:
-            text_description = entry.get("description", "")
             text_description = Helper.truncate_text(
-                text_description, font, content_width
+                entry.get("description") or "", font, content_width
             )
-        # Draw content
-        bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text_description, font=font, align="left"
-        )
-        position = Helper.position(bbox, content_width, content_height / 4, spacing)
-        position = (spacing, position[1] - bbox[1] + spacing)
-        draw.text(position, text_description, fill="black", font=font, align="left")
-        self.debug_boxes.append((position, bbox))
+        self._text(draw, spacing, text_description, font, content_height / 4, 0)
 
         if not entry:
             return image
 
         # Draw project name and color
-        # Set content
-        text_project = ""
-        color_project = "#000000"
-        if entry.get("project_id"):
-            current_project = self._get_project_details(
-                entry.get("project_id"), entry.get("workspace_id")
-            )
-            text_project = current_project.get("name", "")
-            color_project = current_project.get("color", "#000000")
-        # Draw content
+        project = self._get_project_details(entry.get("project_id"))
         font = Helper.load_font(self.font, self.font_size * 0.8)
-        bbox = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text_project, font=font, align="left"
+        bbox = Helper.text_bbox(project.get("name", ""), font)
+        dot = bbox[3] - bbox[1]
+        position, _ = self._text(
+            draw, spacing + dot, project.get("name", ""), font, content_height / 4, content_height / 4
         )
-        position = Helper.position(bbox, content_width, content_height / 4, spacing)
-        position = (spacing, position[1] - bbox[1] + spacing + content_height / 4)
-        draw.circle(
-            (
-                position[0] + bbox[0] + (bbox[3] - bbox[1]) / 2,
-                position[1] + bbox[1] + (bbox[3] - bbox[1]) / 2,
-            ),
-            radius=(bbox[3] - bbox[1]) / 3,
-            fill=color_project,
-        )
-        self.debug_boxes.append(
-            (
-                (position[0] + bbox[0], position[1] + bbox[1]),
-                (0, 0, bbox[3] - bbox[1], bbox[3] - bbox[1]),
-            )
-        )
-        position = (position[0] + (bbox[3] - bbox[1]), position[1])
-        draw.text(
-            position,
-            text_project,
-            fill="black",
-            font=font,
-            align="left",
-        )
-        self.debug_boxes.append((position, bbox))
+        center = (spacing + bbox[0] + dot / 2, position[1] + bbox[1] + dot / 2)
+        draw.circle(center, radius=dot / 3, fill=project.get("color", "#000000"))
+        self.debug_boxes.append(((spacing + bbox[0], position[1] + bbox[1]), (0, 0, dot, dot)))
 
         # Draw time
-        # Set content
-        local_tz = datetime.now().astimezone().tzinfo
         start_time = datetime.fromisoformat(entry.get("start"))
-        text_start = f"{start_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
+        text_start = start_time.astimezone().strftime("%Y-%m-%d %H:%M:%S")
         duration = entry.get("duration", -1)
-        text_end = ""
+        text_end = "-"
         if duration > 0:
             end_time = start_time + timedelta(seconds=duration)
-            text_end = f"{end_time.astimezone(local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
-        else:
-            text_end = "-"
-        # Draw content
-        ## From
+            text_end = end_time.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
         font = Helper.load_font(self.font, self.font_size * 0.6)
-        bbox_from = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), "From: ", font=font, align="left"
-        )
-        position_from = Helper.position(
-            bbox_from, content_width, content_height / 6, spacing
-        )
-        position_from = (
-            spacing,
-            content_height / 2 + position_from[1] - bbox_from[1] + spacing,
-        )
-        draw.text(position_from, "From: ", fill="black", font=font, align="left")
-        self.debug_boxes.append((position_from, bbox_from))
-        ## Start time
-        bbox_start = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text_start, font=font, align="left"
-        )
-        position_start = Helper.position(
-            bbox_start, content_width, content_height / 6, spacing
-        )
-        position_start = (
-            spacing + bbox_from[2] - bbox_from[0],
-            content_height / 2 + position_start[1] - bbox_start[1] + spacing,
-        )
-        draw.text(position_start, text_start, fill="black", font=font, align="left")
-        self.debug_boxes.append((position_start, bbox_start))
-        ## To
-        bbox_to = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), "To: ", font=font, align="left"
-        )
-        position_to = Helper.position(
-            bbox_to, content_width, content_height / 4, spacing
-        )
-        position_to = (
-            spacing,
-            content_height / 3 * 2 + position_to[1] - bbox_to[1] + spacing,
-        )
-        draw.text(position_to, "To: ", fill="black", font=font, align="left")
-        self.debug_boxes.append((position_to, bbox_to))
-        ## End time
-        bbox_end = ImageDraw.Draw(Image.new("RGB", (1, 1))).textbbox(
-            (0, 0), text_end, font=font, align="left"
-        )
-        position_end = Helper.position(
-            bbox_end, content_width, content_height / 4, spacing
-        )
-        position_end = (
-            spacing + bbox_from[2] - bbox_from[0],
-            content_height / 3 * 2 + position_end[1] - bbox_end[1] + spacing,
-        )
-        draw.text(position_end, text_end, fill="black", font=font, align="left")
-        self.debug_boxes.append((position_end, bbox_end))
+        label = Helper.text_bbox("From: ", font)
+        value_x = spacing + label[2] - label[0]
+        rows = [
+            ("From: ", text_start, content_height / 6, content_height / 2),
+            ("To: ", text_end, content_height / 4, content_height / 3 * 2),
+        ]
+        for label_text, value_text, area_height, offset_y in rows:
+            self._text(draw, spacing, label_text, font, area_height, offset_y)
+            self._text(draw, value_x, value_text, font, area_height, offset_y)
 
         return image
 
@@ -242,30 +145,23 @@ class TogglPanel(Panel):
         content_height = (self.height - spacing * 2) / 10
 
         summary = {}
-        total_duration = 0
         for entry in time_entries:
             project_id = entry.get("project_id")
-            if not project_id:
-                continue
-            if entry.get("duration", -1) < 0:
-                continue
-            summary[project_id] = summary.get(project_id, 0) + entry.get("duration", 0)
-            total_duration += entry.get("duration", 0)
-        summary = sorted(summary.items(), key=lambda x: x[1], reverse=True)
+            duration = entry.get("duration", -1)
+            if project_id and duration >= 0:
+                summary[project_id] = summary.get(project_id, 0) + duration
+        total_duration = sum(summary.values())
 
         if total_duration == 0:
             return image
 
         current_x = spacing
-        for project_id, duration in summary:
+        for project_id, duration in sorted(summary.items(), key=lambda x: x[1], reverse=True):
             length = content_width * (duration / total_duration)
             draw.rectangle(
                 [
                     (current_x, self.height - spacing - content_height),
-                    (
-                        current_x + length,
-                        self.height - spacing,
-                    ),
+                    (current_x + length, self.height - spacing),
                 ],
                 fill=self._get_project_details(project_id).get("color", "#000000"),
             )
@@ -273,14 +169,8 @@ class TogglPanel(Panel):
 
         return image
 
-    def _draw_api_invalid(self, image):
-        return Helper.invalid_image(
-            image, self.width, self.height, "Toggl API key is invalid"
-        )
-
     def _draw_debug(self, image):
         draw = ImageDraw.Draw(image)
-        spacing = self.margin + self.padding
         for position, bbox in self.debug_boxes:
             draw.rectangle(
                 [

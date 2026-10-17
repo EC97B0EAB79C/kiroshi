@@ -1,104 +1,84 @@
+import asyncio
+import hashlib
 import logging
-import requests
-from icalendar import Calendar
-from datetime import date, datetime, timedelta, time
-import os
+from datetime import datetime, timedelta, time
 
+from icalendar import Calendar
+
+from src.api import async_request
 
 logger = logging.getLogger(__name__)
 
+# URL -> (request headers, content hash, events). Parse a calendar only when it changes.
+_cache = {}
 
-def get_events(ical_urls, use_cache=False, filter=True):
-    logger.debug("Fetching events from iCal URLs")
 
-    # Load cached calendar if requested
-    if use_cache:
-        logger.debug("> Loading cached calendar")
-        cached_calendar = _load_cache()
-        if cached_calendar:
-            logger.debug("> Cached calendar loaded successfully")
-            return _extract_events(cached_calendar)
-        logger.debug("> No cached calendar found")
-
+async def get_events(ical_urls) -> list:
+    """Return future events from all URLs, read at the same time. Raise when all URLs fail."""
     if not isinstance(ical_urls, list):
         ical_urls = [ical_urls]
+    if not ical_urls:
+        raise ValueError("No iCal URLs")
 
-    logger.debug(f"> Fetching events from {len(ical_urls)} iCal URLs")
-    calendar = None
-    for ical_url in ical_urls:
-        try:
-            logger.debug(f"> Fetching events from iCal URL: {ical_url}")
-            response = requests.get(ical_url)
-            logger.debug(f"> API response status code: {response.status_code}")
+    results = await asyncio.gather(*map(_get_url_events, ical_urls), return_exceptions=True)
+    errors = [r for r in results if isinstance(r, Exception)]
+    for url, result in zip(ical_urls, results):
+        if isinstance(result, Exception):
+            logger.error(f"> Error fetching {url}: {result}")
+    if len(errors) == len(results):
+        raise errors[0]
 
-            response.raise_for_status()
-            if calendar is None:
-                calendar = Calendar.from_ical(response.content)
-            else:
-                temp_calendar = Calendar.from_ical(response.content)
-                for component in temp_calendar.walk("vevent"):
-                    calendar.add_component(component)
+    now = datetime.now().astimezone()
+    events = [
+        event
+        for result in results
+        if not isinstance(result, Exception)
+        for event in result
+        if event["end"] >= now
+    ]
+    logger.debug(f"> {len(events)} future events")
+    return sorted(events, key=lambda x: x["start"])
 
-        except Exception as e:
-            logger.error(f"> Error fetching {ical_url}: {e}")
 
-    if calendar is None:
-        return []
+async def _get_url_events(url) -> list:
+    headers, digest, events = _cache.get(url, ({}, None, None))
+    response = await async_request("GET", url, headers=headers)
+    if response.status_code == 304:
+        return events
 
-    if use_cache:
-        _save_cache(calendar)
+    new_digest = hashlib.sha256(response.content).hexdigest()
+    if new_digest != digest:
+        logger.debug(f"> Parsing {url}")
+        events = await asyncio.to_thread(_parse, response.content)
 
-    events = _extract_events(calendar)
-    logger.debug(f"> Extracted {len(events)} events from calendar")
-
+    validators = {"If-None-Match": response.headers.get("ETag"), "If-Modified-Since": response.headers.get("Last-Modified")}
+    _cache[url] = ({k: v for k, v in validators.items() if v}, new_digest, events)
     return events
 
 
-def _extract_events(calendar, filter=True):
-    now = datetime.now().astimezone()
+def _parse(content) -> list:
+    return _extract_events(Calendar.from_ical(content))
 
+
+def _extract_events(calendar) -> list:
     events = []
     for component in calendar.walk("vevent"):
-        event = {
-            "description": component.get("description") or "",
-            "summary": component.get("summary") or "",
-            "start": (
-                component.get("dtstart").dt if component.get("dtstart") else None
-            ),
-            "end": component.get("dtend").dt if component.get("dtend") else None,
-        }
-        if not event["start"] or not event["end"]:
+        start = component.get("dtstart")
+        end = component.get("dtend")
+        if not start or not end:
             continue
 
-        event = _format_event(event)
+        event = _format_event(
+            {
+                "description": component.get("description") or "",
+                "summary": component.get("summary") or "",
+                "start": start.dt,
+                "end": end.dt,
+            }
+        )
+        events.extend(_divide_event(event))
 
-        if filter and event["end"] < now:
-            continue
-
-        divided_events = _divide_event(event)
-        events.extend(divided_events)
-
-    events = sorted(events, key=lambda x: x["start"])
     return events
-
-
-# ----- Cache Management -----
-def _save_cache(calendar):
-    logger.debug("> Saving calendar cache to .cache/calendar_cache.ics")
-    with open(".cache/calendar_cache.ics", "wb") as f:
-        f.write(calendar.to_ical())
-        logger.debug("> Calendar cache saved successfully")
-
-
-def _load_cache():
-    try:
-        logger.debug("> Loading calendar cache from .cache/calendar_cache.ics")
-        os.makedirs(".cache", exist_ok=True)
-        with open(".cache/calendar_cache.ics", "rb") as f:
-            return Calendar.from_ical(f.read())
-    except FileNotFoundError:
-        logger.info("> No calendar cache found")
-        return None
 
 
 # ----- Helper Functions -----
@@ -126,7 +106,10 @@ def _divide_event(event):
     if event["end"] <= midnight:
         return [event]
 
-    total_days = (event["end"] - event["start"]).days + 1
+    # Count calendar days. An end at exactly 00:00 does not start a new day.
+    total_days = (event["end"].date() - event["start"].date()).days
+    if event["end"].time() != time.min:
+        total_days += 1
     idx = 1
     temp_start = event["start"]
     temp_end = midnight
@@ -147,25 +130,3 @@ def _divide_event(event):
 
     events.append(event)
     return events
-
-
-if __name__ == "__main__":
-    ical_url = [
-        "https://calendar.google.com/calendar/ical/en.japanese%23holiday%40group.v.calendar.google.com/public/basic.ics",
-        "https://calendar.google.com/calendar/ical/en.south_korea%23holiday%40group.v.calendar.google.com/public/basic.ics",
-    ]
-    events = get_events(ical_url, use_cache=False)
-
-    today = datetime.combine(date.today(), datetime.min.time())
-    end = today + timedelta(days=90)
-
-    for event in events:
-        if not event["start"]:
-            continue
-
-        if today <= event["start"] < end:
-            print(f"Event: {event['summary']}")
-            print(f"Description: {event['description']}")
-            print(f"Start: {event['start']}")
-            print(f"End: {event['end']}")
-            print("-" * 20)

@@ -1,3 +1,4 @@
 pillow
 icalendar
 requests
+jsonschema
