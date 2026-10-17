@@ -1,5 +1,34 @@
 # Kiroshi
 
+## Install on a Raspberry Pi
+
+1. Write Raspberry Pi OS Lite to the SD card with Raspberry Pi Imager.
+   In the OS customisation settings, set the user, Wi-Fi and SSH.
+   Use the 32-bit version for the Pi 2 Model B (it has no Wi-Fi: use Ethernet or a USB Wi-Fi adapter).
+2. Connect to the Pi with SSH and run:
+
+   ```sh
+   git clone https://github.com/EC97B0EAB79C/kiroshi && sudo kiroshi/install.sh
+   ```
+
+   The script installs the packages, enables SPI, makes the config,
+   draws one test panel and starts the `kiroshi` service.
+   Add `--auto-update` to update one time each week.
+3. Change the config in `~/.config/kiroshi/` (`setting.json`, `panels.json`).
+   The service reloads it automatically.
+4. Add your API keys to `/etc/kiroshi/env`, then run `sudo systemctl restart kiroshi`.
+
+| Task | Command |
+| --- | --- |
+| See the log | `journalctl -u kiroshi -f` |
+| Update | `sudo ~/kiroshi/install.sh --update` |
+| Test one panel | `~/kiroshi/.venv/bin/python ~/kiroshi/main.py --once -s ~/.config/kiroshi/setting.json` |
+| Stop | `sudo systemctl stop kiroshi` |
+
+Run `install.sh` again at any time to repair the install. It keeps your config.
+
+The 3D-printable case is in [`hardware/`](hardware/README.md).
+
 ## TODO
 
 ### Bugs
