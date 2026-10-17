@@ -43,7 +43,8 @@ Print the front bezel first. Put the panel in it to check the fit.
 ## Assembly
 
 You need:
-- 4 x M3 x 25 screws (Pi Zero 2 W) or M3 x 30 (Pi 2B), self-tapping
+- 4 x M3 x 18 screws (Pi Zero 2 W) or M3 x 25 (Pi 2B), self-tapping.
+  Longer screws go through the front.
 - 4 x M2.5 x 6 screws for the Pi
 - Foam tape, 0.5 mm, for the panel
 
