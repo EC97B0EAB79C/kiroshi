@@ -1,9 +1,5 @@
 from src.panel import Panel
-
-from src.panels.four_panel import FourPanel
-from src.panels.horizontal_panel import HorizontalPanel
-from src.panels.vertical_panel import VerticalPanel
-
+from src.panels.grid_panel import GridPanel
 from src.panels.text_panel import TextPanel
 from src.panels.time_panel import TimePanel
 from src.panels.picture_panel import PicturePanel
@@ -12,63 +8,41 @@ from src.panels.calendar_panel import CalendarPanel
 from src.panels.github_panel import GithubPanel
 from src.panels.picture_time_panel import PictureTimePanel
 
+# Layout type: (rows, cols)
+GRID_LAYOUTS = {
+    "four": (2, 2),
+    "horizontal": (1, 2),
+    "vertical": (2, 1),
+}
 
-def load_panel(panel_spec, DEBUG=False) -> Panel:
-    if panel_spec["type"] == "four":
-        inner_panels = [load_panel(spec, DEBUG=DEBUG) for spec in panel_spec["panels"]]
-        inner_panels += [None] * (4 - len(inner_panels))
-        return FourPanel(
-            width=panel_spec.get("width", 0),
-            height=panel_spec.get("height", 0),
-            settings=panel_spec.get("settings", {}),
-            panel1=inner_panels[0],
-            panel2=inner_panels[1],
-            panel3=inner_panels[2],
-            panel4=inner_panels[3],
-            DEBUG=DEBUG,
-        )
+PANEL_CLASSES = {
+    "text": TextPanel,
+    "time": TimePanel,
+    "toggl": TogglPanel,
+    "picture": PicturePanel,
+    "calendar": CalendarPanel,
+    "github": GithubPanel,
+    "picture_time": PictureTimePanel,
+}
 
-    elif panel_spec["type"] == "horizontal":
-        inner_panels = [load_panel(spec, DEBUG=DEBUG) for spec in panel_spec["panels"]]
-        inner_panels += [None] * (2 - len(inner_panels))
-        return HorizontalPanel(
-            width=panel_spec.get("width", 0),
-            height=panel_spec.get("height", 0),
-            settings=panel_spec.get("settings", {}),
-            panel1=inner_panels[0],
-            panel2=inner_panels[1],
-            DEBUG=DEBUG,
-        )
 
-    elif panel_spec["type"] == "vertical":
-        inner_panels = [load_panel(spec, DEBUG=DEBUG) for spec in panel_spec["panels"]]
-        inner_panels += [None] * (2 - len(inner_panels))
-        return VerticalPanel(
-            width=panel_spec.get("width", 0),
-            height=panel_spec.get("height", 0),
-            settings=panel_spec.get("settings", {}),
-            panel1=inner_panels[0],
-            panel2=inner_panels[1],
-            DEBUG=DEBUG,
-        )
-
-    panel_classes = {
-        "text": TextPanel,
-        "time": TimePanel,
-        "toggl": TogglPanel,
-        "picture": PicturePanel,
-        "calendar": CalendarPanel,
-        "github": GithubPanel,
-        "picture_time": PictureTimePanel,
-    }
-
+def load_panel(panel_spec, debug=False, width=0, height=0, palette=None) -> Panel:
+    """Create a panel from its spec. Child panels get the same palette."""
     panel_type = panel_spec["type"]
-    if panel_type in panel_classes:
-        return panel_classes[panel_type](
-            width=panel_spec.get("width", 0),
-            height=panel_spec.get("height", 0),
-            settings=panel_spec.get("settings", {}),
-            DEBUG=DEBUG,
-        )
+    settings = dict(panel_spec.get("settings", {}))
+    if palette:
+        settings["palette"] = palette
+    args = {"width": width, "height": height, "settings": settings, "debug": debug}
+
+    if panel_type in GRID_LAYOUTS:
+        rows, cols = GRID_LAYOUTS[panel_type]
+        children = [
+            load_panel(spec, debug, palette=settings.get("palette"))
+            for spec in panel_spec.get("panels", [])
+        ]
+        return GridPanel(**args, panels=children, rows=rows, cols=cols)
+
+    if panel_type in PANEL_CLASSES:
+        return PANEL_CLASSES[panel_type](**args)
 
     raise ValueError(f"Unknown panel type: {panel_type}")

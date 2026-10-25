@@ -1,43 +1,34 @@
-import os
 import sys
 import logging
+import importlib
+
+import src.default as Default
+from src.palette import EPD_PALETTE_MAP
 
 logger = logging.getLogger(__name__)
 
+
 class EPDManager:
     def __init__(self, display_name: str):
-        self.epd = None
-        self._initialize_epd(display_name)
-
-    def _initialize_epd(self, name: str):
-        basedir = os.path.dirname(os.path.realpath(__file__))
-        libdir = os.path.abspath(os.path.join(basedir, "../../lib"))
-        logger.debug(f"Adding library directory to sys.path: {libdir}")
-
-        if os.path.exists(libdir) and libdir not in sys.path:
+        libdir = str(Default.ROOT / "lib")
+        if libdir not in sys.path:
             sys.path.append(libdir)
 
-        # Configure EPD library
+        if display_name not in EPD_PALETTE_MAP:
+            logger.warning(f"Unsupported e-Paper display name: {display_name}")
+            logger.warning("Using mock e-Paper display instead.")
+            display_name = "mock"
+
         try:
-            if name == "epd7in3e":
-                from waveshare_epd import epd7in3e as epd_lib
-            else:
-                logger.warning(f"Unsupported e-Paper display name: {name}")
-                logger.warning("Using mock e-Paper display instead.")
-                from waveshare_epd import mock as epd_lib
-
+            epd_lib = importlib.import_module(f"waveshare_epd.{display_name}")
             self.epd = epd_lib.EPD()
-            logger.info("e-Paper library imported successfully.")
-
         except Exception as e:
-            logger.error(f"Error importing e-Paper library: {e}")
-            raise RuntimeError("Failed to import e-Paper library")
+            raise RuntimeError(f"Failed to import e-Paper library: {e}") from e
 
-    def set_panel(self, image, full_refresh: bool=True):
-        if not full_refresh:
-            logger.warning("Partial refresh not implemented")
-            # TODO
+        self.palette = EPD_PALETTE_MAP[display_name]
+        logger.info(f"e-Paper library {display_name} imported successfully.")
 
+    def set_panel(self, image):
         logger.debug("Displaying image on e-Paper display")
         self.epd.init()
         self.epd.display(self.epd.getbuffer(image))
@@ -45,7 +36,7 @@ class EPDManager:
         logger.debug("Image displayed successfully on e-Paper display")
 
     def cleanup(self):
-        if self.epd is not None:
-            logger.info("Cleaning up e-Paper display")
-            self.epd.init()
-            self.epd.Clear()
+        logger.info("Cleaning up e-Paper display")
+        self.epd.init()
+        self.epd.Clear()
+        self.epd.sleep()

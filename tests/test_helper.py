@@ -2,12 +2,10 @@ import unittest
 import json
 import os
 import datetime
-from unittest.mock import patch, mock_open
-from PIL import Image, ImageFont, ImageDraw
-from pathlib import Path
+from unittest.mock import patch
+from PIL import Image
 
 from src import helper
-from src.palette import PALETTE_6_COLORS
 
 class TestHelper(unittest.TestCase):
 
@@ -21,6 +19,7 @@ class TestHelper(unittest.TestCase):
         self.test_font_path = "test_font.ttf"
         # This is a placeholder, actual font file creation is complex
         # For now, we'll rely on mocking or a default font for testing.
+        helper._load_font.cache_clear()
 
     def tearDown(self):
         # Clean up dummy files
@@ -34,14 +33,14 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(data, {"key": "value"})
 
     def test_load_json_file_not_found(self):
-        data = helper.load_json("non_existent_file.json")
-        self.assertEqual(data, {})
+        with self.assertRaisesRegex(ValueError, "Cannot load JSON"):
+            helper.load_json("non_existent_file.json")
 
     def test_load_json_decode_error(self):
         with open(self.test_json_path, "w") as f:
             f.write("invalid json")
-        data = helper.load_json(self.test_json_path)
-        self.assertEqual(data, {})
+        with self.assertRaisesRegex(ValueError, "Cannot load JSON"):
+            helper.load_json(self.test_json_path)
 
     @patch('src.helper.Path')
     def test_get_file_modified_time_success(self, mock_path):
@@ -63,7 +62,7 @@ class TestHelper(unittest.TestCase):
     def test_load_font_success(self, mock_load_default, mock_truetype):
         mock_truetype.return_value = "mock_font"
         font = helper.load_font(self.test_font_path, 12)
-        mock_truetype.assert_called_with(self.test_font_path, 12)
+        mock_truetype.assert_called_with(str(helper.resolve_path(self.test_font_path)), 12)
         self.assertEqual(font, "mock_font")
 
     @patch('src.helper.ImageFont.truetype', side_effect=Exception("Font error"))
@@ -122,6 +121,17 @@ class TestHelper(unittest.TestCase):
         expected = """This is a long text
 that needs to be cut"""
         self.assertEqual(result, expected)
+
+    def test_cut_text_keeps_new_lines(self):
+        class MockFont:
+            def getbbox(self, text):
+                if "\n" in text:
+                    raise RuntimeError("raqm_layout() failed.")  # like Pillow 13
+                return (0, 0, len(text) * 5, 10)
+
+        result = helper.cut_text("2026-10-25\n02:04 and more", MockFont(), 10 * 5)
+        self.assertEqual(result, "2026-10-25\n02:04 and\nmore")
+        self.assertEqual(helper.truncate_text("first\nsecond", MockFont(), 50), "first")
 
     def test_truncate_text(self):
         class MockFont:

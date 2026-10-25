@@ -1,96 +1,48 @@
 import logging
-import requests
-import os
 
+from src.api import async_request
 
 logger = logging.getLogger(__name__)
 
-
-def get_github_contributions(username, token, year=None):
-    logger.debug(f"Fetching contributions for user: {username}")
-    result = _graphql_query(username, token, year)
-
-    if result is None:
-        logger.debug(f"No contributions found for user: {username}")
-        return None
-
-    contributions = result.get("contributionCalendar", {}).get("weeks", [])
-    contributions = [
-        {
-            "contributionDays": [
-                {"color": day["color"], "data": day["date"]}
-                for day in week["contributionDays"]
-            ]
-        }
-        for week in contributions
-    ]
-    logger.debug(f"Contributions found: {len(contributions)} weeks")
-
-    return contributions
-
-
-def _graphql_query(username, token, year=None):
-    url = "https://api.github.com/graphql"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
-    query = """
-    query GetUserContributions($username: String!, $from: DateTime, $to: DateTime) {
-      user(login: $username) {
-        contributionsCollection(from: $from, to: $to) {
-          contributionCalendar {
-            totalContributions
-            weeks {
-              contributionDays {
-                color
-                contributionCount
-                date
-              }
-            }
+URL = "https://api.github.com/graphql"
+QUERY = """
+query GetUserContributions($username: String!, $from: DateTime, $to: DateTime) {
+  user(login: $username) {
+    contributionsCollection(from: $from, to: $to) {
+      contributionCalendar {
+        weeks {
+          contributionDays {
+            color
+            date
           }
         }
       }
     }
-    """
+  }
+}
+"""
+
+
+async def get_github_contributions(username, token, year=None) -> list:
+    """Return the contribution weeks of a user. Raise on error."""
+    logger.debug(f"Fetching contributions for user: {username}")
     variables = {"username": username}
-
     if year:
-        from_date = f"{year}-01-01T00:00:00Z"
-        to_date = f"{year}-12-31T23:59:59Z"
-        variables["from"] = from_date
-        variables["to"] = to_date
+        variables["from"] = f"{year}-01-01T00:00:00Z"
+        variables["to"] = f"{year}-12-31T23:59:59Z"
 
-    payload = {"query": query, "variables": variables}
+    response = await async_request(
+        "POST",
+        URL,
+        json={"query": QUERY, "variables": variables},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    data = response.json()
 
-    try:
-        logger.debug(f"> Sending GraphQL request to {url}")
-        response = requests.post(url, json=payload, headers=headers)
-        logger.debug(f"> Received response: {response.status_code}")
+    user = (data.get("data") or {}).get("user")
+    if user is None:
+        raise ValueError(f"GitHub user not found: {username} ({data.get('errors')})")
 
-        response.raise_for_status()
-        data = response.json()
-        if data is None:
-            return None
-        if data.get("data") is None:
-            return None
-        if data.get("data").get("user") is None:
-            return None
-
-        return data.get("data").get("user").get("contributionsCollection", {})
-    except requests.RequestException as e:
-        print(f"Error fetching contributions: {e}")
-        return None
-
-
-if __name__ == "__main__":
-    username = "TEST_USERNAME"
-    token = os.getenv("GITHUB_TOKEN")
-    contributions = get_github_contributions(username, token)
-
-    if contributions:
-        print(f"Contributions for {username}:")
-        for contribution in contributions:
-            print(contribution)
-    else:
-        print(f"No contributions found for {username}.")
+    weeks = user["contributionsCollection"]["contributionCalendar"]["weeks"]
+    logger.debug(f"Contributions found: {len(weeks)} weeks")
+    return weeks

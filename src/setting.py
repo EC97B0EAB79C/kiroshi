@@ -1,112 +1,90 @@
 import logging
+from datetime import datetime, timedelta, time
+
+import jsonschema
 
 import src.helper as Helper
-from src.palette import EPD_PALETTE_MAP
 import src.default as Default
-
-from datetime import datetime, timezone, timedelta
+from src.schema import SETTINGS_SCHEMA, PANELS_SCHEMA
 
 logger = logging.getLogger(__name__)
 
 
+def _validate(data, schema, file_path):
+    try:
+        jsonschema.validate(data, schema)
+    except jsonschema.ValidationError as e:
+        where = "/".join(str(p) for p in e.absolute_path) or "(root)"
+        raise ValueError(f"Invalid config {file_path} at {where}: {e.message}") from None
+
+
+def _parse_time(time_str) -> time:
+    try:
+        return datetime.strptime(time_str, "%H:%M").time()
+    except ValueError:
+        raise ValueError(f"Invalid time format: {time_str}. Expected format is HH:MM.")
+
+
 class Setting:
     def __init__(self, settings_file=Default.SETTINGS_FILE):
-        # Load settings
-        self._load_settings(settings_file)
-
-        # Load schedule
-        self._load_schedule()
-
-        # Load panels
-        self._load_panels()
-
-        # Initialize current panel index
-        self.current_panel_index = 0
-
-    def _update(self):
-        settings_mod_time = Helper.get_file_modified_time(self.settings_file)
-        if settings_mod_time != self.setting_update:
-            logger.info("Settings file updated, reloading")
-            self._load_settings(self.settings_file)
-            self._load_schedule()
-
-        panel_spec = self.settings.get("panel_spec", Default.PANEL_SPEC_FILE)
-        panel_mod_time = Helper.get_file_modified_time(panel_spec)
-        if panel_mod_time != self.panels_update:
-            logger.info("Panel spec file updated, reloading")
-            self._load_panels()
-
-    def _load_settings(self, settings_file):
-        logger.debug(f"Loading settings from {settings_file}")
         self.settings_file = settings_file
-        self.setting_update = Helper.get_file_modified_time(settings_file)
-        self.settings = Helper.load_json(self.settings_file)
-        self._verify_settings()
+        self.current_panel_index = 0
+        self._load()
 
-    def _load_panels(self):
-        panel_spec = self.settings.get("panel_spec", Default.PANEL_SPEC_FILE)
+    def _load(self):
+        """Load and check both files. Change nothing when a file is not valid."""
+        logger.debug(f"Loading settings from {self.settings_file}")
+        settings_update = Helper.get_file_modified_time(self.settings_file)
+        settings = Helper.load_json(self.settings_file)
+        _validate(settings, SETTINGS_SCHEMA, self.settings_file)
+
+        panel_spec = settings.get("panel_spec", Default.PANEL_SPEC_FILE)
         logger.debug(f"Loading panels from {panel_spec}")
-        self.panels = Helper.load_json(panel_spec)
-        self.panels_update = Helper.get_file_modified_time(panel_spec)
-        self._verify_panels()
+        panels_update = Helper.get_file_modified_time(panel_spec)
+        panels = Helper.load_json(panel_spec)
+        _validate(panels, PANELS_SCHEMA, panel_spec)
 
-    def _load_schedule(self):
-        self.schedule = self.settings.get("schedule", [])
-        if not self.schedule:
-            raise ValueError("No schedule found in settings")
+        bedtime = settings.get("bedtime")
+        ids = [s["id"] for s in settings["schedule"]] + ([bedtime["id"]] if bedtime else [])
+        for panel_id in ids:
+            if panel_id >= len(panels):
+                raise ValueError(
+                    f"Invalid panel ID: {panel_id}. Must be an integer between 0 and {len(panels) - 1}."
+                )
+        if bedtime:
+            bedtime = {**bedtime, "start": _parse_time(bedtime["start"]), "end": _parse_time(bedtime["end"])}
 
-        self.schedule_length = len(self.schedule)
-        if self.schedule_length == 0:
-            raise ValueError("Schedule is empty")
-
-        self.bedtime = self.settings.get("bedtime", None)
-
-    def _verify_settings(self):
-        if not self.settings:
-            raise ValueError(f"Failed to load settings from {self.settings_file}")
-
-    def _verify_panels(self):
-        if not self.panels:
-            raise ValueError(f"Failed to load panels")
+        self.settings, self.panels, self.bedtime = settings, panels, bedtime
+        self.schedule = settings["schedule"]
+        self.setting_update, self.panels_update = settings_update, panels_update
+        self.current_panel_index %= len(self.schedule)
         logger.info(f"Loaded {len(self.panels)} panels")
 
-        for s in self.schedule:
-            panel_id = s.get("id", 0)
-            if (
-                not isinstance(panel_id, int)
-                or panel_id < 0
-                or panel_id >= len(self.panels)
-            ):
-                raise ValueError(
-                    f"Invalid panel ID: {panel_id}. Must be an integer between 0 and {len(self.panels) - 1}."
-                )
-
-    def set_epd_settings(self, epd):
-        for panel in self.panels:
-            panel["width"] = epd.width
-            panel["height"] = epd.height
-
-        epd_name = self.get_epd_name()
-        palette = EPD_PALETTE_MAP.get(epd_name, None)
-        if palette is None:
-            raise ValueError(f"Unsupported e-Paper display: {epd_name}")
-
-        for panel in self.panels:
-            panel["settings"]["palette"] = palette
+    def _update(self):
+        try:
+            panel_spec = self.settings.get("panel_spec", Default.PANEL_SPEC_FILE)
+            changed = (
+                Helper.get_file_modified_time(self.settings_file) != self.setting_update
+                or Helper.get_file_modified_time(panel_spec) != self.panels_update
+            )
+            if changed:
+                logger.info("Config file updated, reloading")
+                self._load()
+        except (ValueError, RuntimeError) as e:
+            logger.error(f"Reload failed, keeping the old config: {e}")
 
     def get_next_panel(self):
         self._update()
         if self.is_bedtime():
             logger.info("Starting bedtime mode")
-            bedtime_panel = self.bedtime.get("id", 0)
-            panel_duration = self.get_bedtime_duration()
-            return bedtime_panel, self.panels[bedtime_panel], panel_duration
+            bedtime_panel = self.bedtime["id"]
+            return bedtime_panel, self.panels[bedtime_panel], self.get_bedtime_duration()
 
         current_panel_spec = self.schedule[self.current_panel_index]
-        panel_id = current_panel_spec.get("id", 0)
+        panel_id = current_panel_spec["id"]
         panel_duration = self.get_panel_duration(current_panel_spec)
 
-        self.current_panel_index = (self.current_panel_index + 1) % self.schedule_length
+        self.current_panel_index = (self.current_panel_index + 1) % len(self.schedule)
 
         return panel_id, self.panels[panel_id], panel_duration
 
@@ -125,44 +103,27 @@ class Setting:
         return min(duration, self.get_time_to_bedtime())
 
     def get_time_to_bedtime(self):
-        start_time = self._parse_time(self.bedtime["start"])
-        duration = self._calculate_duration(start_time)
-
-        return duration
+        return self._calculate_duration(self.bedtime["start"])
 
     def get_bedtime_duration(self):
-        end_time = self._parse_time(self.bedtime["end"])
-        duration = self._calculate_duration(end_time)
-
-        return duration
+        return self._calculate_duration(self.bedtime["end"])
 
     def is_bedtime(self):
         if not self.bedtime:
             return False
 
-        now = datetime.now()
-        start_time = self._parse_time(self.bedtime["start"])
-        end_time = self._parse_time(self.bedtime["end"])
+        now = datetime.now().time()
+        start_time, end_time = self.bedtime["start"], self.bedtime["end"]
 
         if start_time < end_time:
-            return start_time <= now.time() < end_time
-        else:
-            return now.time() >= start_time or now.time() < end_time
+            return start_time <= now < end_time
+        return now >= start_time or now < end_time
 
-    def _parse_time(self, time_str):
-        try:
-            return datetime.strptime(time_str, "%H:%M").time()
-        except ValueError:
-            logger.error(f"Invalid time format: {time_str}. Expected format is HH:MM.")
-            return None
-
-    def _calculate_duration(self, time):
+    def _calculate_duration(self, target):
         now = datetime.now()
-        target_time = datetime.combine(now.date(), time)
+        target_time = datetime.combine(now.date(), target)
 
         if target_time < now:
             target_time += timedelta(days=1)
 
-        duration = target_time - now
-
-        return duration.total_seconds()
+        return (target_time - now).total_seconds()
