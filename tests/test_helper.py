@@ -122,6 +122,17 @@ class TestHelper(unittest.TestCase):
 that needs to be cut"""
         self.assertEqual(result, expected)
 
+    def test_cut_text_keeps_new_lines(self):
+        class MockFont:
+            def getbbox(self, text):
+                if "\n" in text:
+                    raise RuntimeError("raqm_layout() failed.")  # like Pillow 13
+                return (0, 0, len(text) * 5, 10)
+
+        result = helper.cut_text("2026-10-25\n02:04 and more", MockFont(), 10 * 5)
+        self.assertEqual(result, "2026-10-25\n02:04 and\nmore")
+        self.assertEqual(helper.truncate_text("first\nsecond", MockFont(), 50), "first")
+
     def test_truncate_text(self):
         class MockFont:
             def getbbox(self, text):

@@ -66,6 +66,11 @@ def position(bbox, width, height, spacing=0, location="center"):
 
 
 def cut_text(text, font, max_width):
+    """Wrap text to max_width. Measure one line at a time (getbbox is single-line only)."""
+    return "\n".join(_cut_line(line, font, max_width) for line in text.split("\n"))
+
+
+def _cut_line(text, font, max_width):
     words = text.split(" ")
     lines = []
     current_line = ""
@@ -86,6 +91,8 @@ def cut_text(text, font, max_width):
 
 
 def truncate_text(text, font, max_width):
+    """Cut one line of text to max_width, with "...". Only the first line is kept."""
+    text = text.split("\n")[0]
     if font.getbbox(text)[2] <= max_width:
         return text
 
