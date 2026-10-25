@@ -8,6 +8,7 @@
 #   sudo ./install.sh --auto-update  Install, and update one time each week.
 #
 # Set EPD=<name> to choose the display driver (default: epd7in3e on a Pi, else mock).
+# Set EPD_HOST=<address> when an STM32 board drives the display (see README).
 
 set -euo pipefail
 
@@ -59,7 +60,7 @@ setup_config() {
     if [ ! -f "$CONFIG_DIR/setting.json" ]; then
         info "Making config in $CONFIG_DIR"
         local epd="${EPD:-mock}"
-        grep -qs "Raspberry Pi" /proc/device-tree/model && epd="${EPD:-epd7in3e}"
+        { [ -n "${EPD_HOST:-}" ] || grep -qs "Raspberry Pi" /proc/device-tree/model; } && epd="${EPD:-epd7in3e}"
         as_user mkdir -p "$CONFIG_DIR"
         as_user cp "$APP_DIR/example/setting.json" "$APP_DIR/example/panels.json" "$CONFIG_DIR/"
         as_user python3 - "$CONFIG_DIR" "$epd" <<'EOF'
@@ -83,7 +84,15 @@ EOF
 # Remove "#" and add your key. Then: sudo systemctl restart kiroshi
 #GITHUB_TOKEN=
 #TOGGL_API_KEY=
+# Address of the STM32 board that drives the display (firmware/stm32)
+#EPD_HOST=
 EOF
+    fi
+
+    if [ -n "${EPD_HOST:-}" ]; then
+        info "Using the STM32 board at $EPD_HOST"
+        sed -i '/^#\?EPD_HOST=/d' "$ENV_FILE"
+        echo "EPD_HOST=$EPD_HOST" >> "$ENV_FILE"
     fi
 }
 

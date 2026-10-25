@@ -29,6 +29,51 @@ Run `install.sh` again at any time to repair the install. It keeps your config.
 
 The 3D-printable case is in [`hardware/`](hardware/README.md).
 
+## Use an STM32 NUCLEO-F429ZI board
+
+The STM32 board cannot run Kiroshi alone. It has no Linux and only 256 KB of RAM.
+Kiroshi runs on a computer (for example a Linux server).
+The computer sends the display commands over Ethernet to the board.
+The board sends them to the display. All panels operate as on a Pi.
+
+1. Connect the e-Paper HAT to the board with the 9-pin cable:
+
+   | e-Paper | VCC | GND | DIN | CLK | CS | DC | RST | BUSY | PWR |
+   | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+   | Board pin | 3V3 | GND | PB5 (D22) | PB3 (D23) | PD14 (D10) | PD15 (D9) | PF12 (D8) | PF13 (D7) | PE9 (D6) |
+
+2. Download the MicroPython firmware for
+   [NUCLEO_F429ZI](https://micropython.org/download/NUCLEO_F429ZI/).
+   Connect the ST-LINK USB port to your computer and write the firmware:
+
+   ```sh
+   st-flash --format ihex write firmware.hex
+   ```
+
+3. Get Kiroshi and copy the bridge to the board:
+
+   ```sh
+   git clone https://github.com/EC97B0EAB79C/kiroshi
+   pip install mpremote
+   mpremote cp kiroshi/firmware/stm32/main.py :main.py + reset
+   ```
+
+4. Connect the board to your network with an Ethernet cable.
+   The board gets its address from DHCP.
+   To see the address, run `mpremote repl` and push the black RESET button.
+   Give the board a fixed address in your router,
+   or set it in `firmware/stm32/main.py`.
+5. On the computer, install Kiroshi with the address of the board:
+
+   ```sh
+   sudo EPD_HOST=192.168.1.50 kiroshi/install.sh
+   ```
+
+   The script sets `"epd": "epd7in3e"` and writes `EPD_HOST` to `/etc/kiroshi/env`.
+   If you do not use `install.sh`, set `"epd": "epd7in3e"` in `setting.json`
+   run `pip install -r requirements.txt`,
+   then run `EPD_HOST=192.168.1.50 python main.py -s setting.json`.
+
 ## TODO
 
 ### Bugs
@@ -88,6 +133,7 @@ The 3D-printable case is in [`hardware/`](hardware/README.md).
 - [ ] CLI: `--output file.png`
 - [ ] Panel setup/teardown lifecycle
 - [ ] More e-Paper display models (and their palettes)
+- [x] STM32 NUCLEO-F429ZI board drives the display over Ethernet
 - [ ] Weather panel (for example Open-Meteo, no API key)
 - [ ] Picture slideshow panel (folder or URL)
 - [ ] Quote / RSS / news text panel

@@ -29,6 +29,8 @@
 
 import os
 import logging
+import socket
+import struct
 import sys
 import time
 import subprocess
@@ -361,6 +363,53 @@ class SunriseX3:
         )
 
 
+class STM32:
+    """Send GPIO, SPI and delay commands over Ethernet to an STM32 board.
+    The board runs firmware/stm32/main.py. Set EPD_HOST=<address>[:port]."""
+
+    # Pin ID: the index in PINS of firmware/stm32/main.py
+    RST_PIN, DC_PIN, CS_PIN, BUSY_PIN, PWR_PIN = range(5)
+
+    def __init__(self, address):
+        host, _, port = address.partition(":")
+        self.address = (host, int(port or 5000))
+        self.sock = None
+
+    def _send(self, op, pin=0, value=0, data=b""):
+        self.sock.sendall(struct.pack(">BBI", ord(op), pin, value) + data)
+
+    def digital_write(self, pin, value):
+        self._send("W", pin, value)
+
+    def digital_read(self, pin):
+        self._send("R", pin)
+        reply = self.sock.recv(1)
+        if not reply:
+            raise ConnectionError("The STM32 board closed the connection")
+        return reply[0]
+
+    def delay_ms(self, delaytime):
+        # The board waits, so the network does not change the timing
+        self._send("D", 0, delaytime)
+
+    def spi_writebyte(self, data):
+        data = bytes(data)
+        self._send("S", 0, len(data), data)
+
+    spi_writebyte2 = spi_writebyte
+
+    def module_init(self, cleanup=False):
+        self.sock = socket.create_connection(self.address, timeout=60)
+        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self.digital_write(self.PWR_PIN, 1)
+        return 0
+
+    def module_exit(self, cleanup=False):
+        for pin in (self.RST_PIN, self.DC_PIN, self.PWR_PIN):
+            self.digital_write(pin, 0)
+        self.sock.close()
+
+
 if sys.version_info[0] == 2:
     process = subprocess.Popen(
         "cat /proc/cpuinfo | grep Raspberry", shell=True, stdout=subprocess.PIPE
@@ -376,7 +425,9 @@ output, _ = process.communicate()
 if sys.version_info[0] == 2:
     output = output.decode(sys.stdout.encoding)
 
-if "Raspberry" in output:
+if os.environ.get("EPD_HOST"):
+    implementation = STM32(os.environ["EPD_HOST"])
+elif "Raspberry" in output:
     implementation = RaspberryPi()
 elif os.path.exists("/sys/bus/platform/drivers/gpio-x3"):
     implementation = SunriseX3()
